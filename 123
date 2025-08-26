@@ -6,6 +6,8 @@ local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
@@ -15,12 +17,12 @@ local DISCORD_GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json"
 
 -- Chilli Hub channels to monitor
 local CHILLI_HUB_CHANNELS = {
-    "1394958052536619059", -- under_500k
-    "1394958062166474823", -- 500k_1m  
-    "1400302142702751864", -- 500k_1m (alt)
-    "1399474388105035988", -- 1m-10m
-    "1400302392431349770", -- 1m-10m (alt)
-    "1399474419038032024", -- 10m_plus
+    ["under_500k"] = "1394958052536619059",
+    ["500k_1m"] = "1394958062166474823", 
+    ["500k_1m_alt"] = "1400302142702751864",
+    ["1m_10m"] = "1399474388105035988",
+    ["1m_10m_alt"] = "1400302392431349770",
+    ["10m_plus"] = "1399474419038032024",
 }
 
 -- Create main UI
@@ -32,8 +34,8 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 -- Main container
 local mainContainer = Instance.new("Frame")
 mainContainer.Name = "MainContainer"
-mainContainer.Size = UDim2.new(0, 380, 0, 250)
-mainContainer.Position = UDim2.new(0.05, 0, 0.65, 0)
+mainContainer.Size = UDim2.new(0, 400, 0, 450)
+mainContainer.Position = UDim2.new(0.05, 0, 0.3, 0)
 mainContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 mainContainer.BorderSizePixel = 0
 mainContainer.Parent = screenGui
@@ -107,11 +109,144 @@ statusLabel.TextSize = 12
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = statusPanel
 
+-- Server filter section
+local filterPanel = Instance.new("Frame")
+filterPanel.Name = "FilterPanel"
+filterPanel.Size = UDim2.new(1, -20, 0, 120)
+filterPanel.Position = UDim2.new(0, 10, 0, 80)
+filterPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+filterPanel.BorderSizePixel = 0
+filterPanel.Parent = mainContainer
+
+local filterCorner = Instance.new("UICorner")
+filterCorner.CornerRadius = UDim.new(0, 6)
+filterCorner.Parent = filterPanel
+
+local filterTitle = Instance.new("TextLabel")
+filterTitle.Name = "FilterTitle"
+filterTitle.Size = UDim2.new(1, -10, 0, 20)
+filterTitle.Position = UDim2.new(0, 10, 0, 5)
+filterTitle.BackgroundTransparency = 1
+filterTitle.Text = "Server Filters:"
+filterTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+filterTitle.Font = Enum.Font.GothamBold
+filterTitle.TextSize = 12
+filterTitle.TextXAlignment = Enum.TextXAlignment.Left
+filterTitle.Parent = filterPanel
+
+-- Minimum money input
+local minMoneyContainer = Instance.new("Frame")
+minMoneyContainer.Name = "MinMoneyContainer"
+minMoneyContainer.Size = UDim2.new(1, -20, 0, 25)
+minMoneyContainer.Position = UDim2.new(0, 10, 0, 30)
+minMoneyContainer.BackgroundTransparency = 1
+minMoneyContainer.Parent = filterPanel
+
+local minMoneyLabel = Instance.new("TextLabel")
+minMoneyLabel.Name = "MinMoneyLabel"
+minMoneyLabel.Size = UDim2.new(0.5, -5, 1, 0)
+minMoneyLabel.Position = UDim2.new(0, 0, 0, 0)
+minMoneyLabel.BackgroundTransparency = 1
+minMoneyLabel.Text = "Min Money (M):"
+minMoneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+minMoneyLabel.Font = Enum.Font.Gotham
+minMoneyLabel.TextSize = 12
+minMoneyLabel.TextXAlignment = Enum.TextXAlignment.Left
+minMoneyLabel.Parent = minMoneyContainer
+
+local minMoneyBox = Instance.new("TextBox")
+minMoneyBox.Name = "MinMoneyBox"
+minMoneyBox.Size = UDim2.new(0.5, -5, 1, 0)
+minMoneyBox.Position = UDim2.new(0.5, 5, 0, 0)
+minMoneyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+minMoneyBox.BorderSizePixel = 0
+minMoneyBox.Text = "10"
+minMoneyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+minMoneyBox.Font = Enum.Font.Gotham
+minMoneyBox.TextSize = 12
+minMoneyBox.Parent = minMoneyContainer
+
+local minMoneyCorner = Instance.new("UICorner")
+minMoneyCorner.CornerRadius = UDim.new(0, 4)
+minMoneyCorner.Parent = minMoneyBox
+
+-- Max players input
+local maxPlayersContainer = Instance.new("Frame")
+maxPlayersContainer.Name = "MaxPlayersContainer"
+maxPlayersContainer.Size = UDim2.new(1, -20, 0, 25)
+maxPlayersContainer.Position = UDim2.new(0, 10, 0, 60)
+maxPlayersContainer.BackgroundTransparency = 1
+maxPlayersContainer.Parent = filterPanel
+
+local maxPlayersLabel = Instance.new("TextLabel")
+maxPlayersLabel.Name = "MaxPlayersLabel"
+maxPlayersLabel.Size = UDim2.new(0.5, -5, 1, 0)
+maxPlayersLabel.Position = UDim2.new(0, 0, 0, 0)
+maxPlayersLabel.BackgroundTransparency = 1
+maxPlayersLabel.Text = "Max Players:"
+maxPlayersLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+maxPlayersLabel.Font = Enum.Font.Gotham
+maxPlayersLabel.TextSize = 12
+maxPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
+maxPlayersLabel.Parent = maxPlayersContainer
+
+local maxPlayersBox = Instance.new("TextBox")
+maxPlayersBox.Name = "MaxPlayersBox"
+maxPlayersBox.Size = UDim2.new(0.5, -5, 1, 0)
+maxPlayersBox.Position = UDim2.new(0.5, 5, 0, 0)
+maxPlayersBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+maxPlayersBox.BorderSizePixel = 0
+maxPlayersBox.Text = "6"
+maxPlayersBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+maxPlayersBox.Font = Enum.Font.Gotham
+maxPlayersBox.TextSize = 12
+maxPlayersBox.Parent = maxPlayersContainer
+
+local maxPlayersCorner = Instance.new("UICorner")
+maxPlayersCorner.CornerRadius = UDim.new(0, 4)
+maxPlayersCorner.Parent = maxPlayersBox
+
+-- Channel selection
+local channelContainer = Instance.new("Frame")
+channelContainer.Name = "ChannelContainer"
+channelContainer.Size = UDim2.new(1, -20, 0, 25)
+channelContainer.Position = UDim2.new(0, 10, 0, 90)
+channelContainer.BackgroundTransparency = 1
+channelContainer.Parent = filterPanel
+
+local channelLabel = Instance.new("TextLabel")
+channelLabel.Name = "ChannelLabel"
+channelLabel.Size = UDim2.new(0.5, -5, 1, 0)
+channelLabel.Position = UDim2.new(0, 0, 0, 0)
+channelLabel.BackgroundTransparency = 1
+channelLabel.Text = "Channel:"
+channelLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+channelLabel.Font = Enum.Font.Gotham
+channelLabel.TextSize = 12
+channelLabel.TextXAlignment = Enum.TextXAlignment.Left
+channelLabel.Parent = channelContainer
+
+local channelDropdown = Instance.new("TextButton")
+channelDropdown.Name = "ChannelDropdown"
+channelDropdown.Size = UDim2.new(0.5, -5, 1, 0)
+channelDropdown.Position = UDim2.new(0.5, 5, 0, 0)
+channelDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+channelDropdown.BorderSizePixel = 0
+channelDropdown.Text = "10m_plus"
+channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+channelDropdown.Font = Enum.Font.Gotham
+channelDropdown.TextSize = 12
+channelDropdown.Parent = channelContainer
+
+local channelCorner = Instance.new("UICorner")
+channelCorner.CornerRadius = UDim.new(0, 4)
+channelCorner.Parent = channelDropdown
+
 -- Toggle button
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Size = UDim2.new(1, -20, 0, 40)
-toggleButton.Position = UDim2.new(0, 10, 0, 80)
+toggleButton.Position = UDim2.new(0, 10, 0, 210)
 toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
 toggleButton.BorderSizePixel = 0
 toggleButton.Text = "START AUTOJOINER"
@@ -128,7 +263,7 @@ toggleCorner.Parent = toggleButton
 local statsPanel = Instance.new("Frame")
 statsPanel.Name = "StatsPanel"
 statsPanel.Size = UDim2.new(1, -20, 0, 80)
-statsPanel.Position = UDim2.new(0, 10, 0, 130)
+statsPanel.Position = UDim2.new(0, 10, 0, 260)
 statsPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 statsPanel.BorderSizePixel = 0
 statsPanel.Parent = mainContainer
@@ -173,20 +308,77 @@ lastServerLabel.TextSize = 12
 lastServerLabel.TextXAlignment = Enum.TextXAlignment.Left
 lastServerLabel.Parent = statsPanel
 
+-- Log panel
+local logPanel = Instance.new("ScrollingFrame")
+logPanel.Name = "LogPanel"
+logPanel.Size = UDim2.new(1, -20, 0, 80)
+logPanel.Position = UDim2.new(0, 10, 0, 350)
+logPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+logPanel.BorderSizePixel = 0
+logPanel.ScrollBarThickness = 5
+logPanel.CanvasSize = UDim2.new(0, 0, 2, 0)
+logPanel.Parent = mainContainer
+
+local logCorner = Instance.new("UICorner")
+logCorner.CornerRadius = UDim.new(0, 6)
+logCorner.Parent = logPanel
+
+local logLayout = Instance.new("UIListLayout")
+logLayout.Parent = logPanel
+logLayout.SortOrder = Enum.SortOrder.LayoutOrder
+logLayout.Padding = UDim.new(0, 2)
+
 -- AutoJoiner logic
 local isRunning = false
 local serversJoined = 0
 local totalMoney = 0
 local minMoney = 10 -- Minimum 10M/s
-local maxPlayers = 7 -- Don't join if 7/8 or 8/8
+local maxPlayers = 6 -- Don't join if 6/8 or more
 local discordConnected = false
 local websocket = nil
+local logs = {}
 
 -- Check if token is provided
 if DISCORD_TOKEN == "" then
     statusLabel.Text = "Error: Execute with _G.DISCORD_TOKEN"
 else
     statusLabel.Text = "Token found! Ready to start"
+end
+
+-- Function to add log message
+local function addLog(message)
+    local timestamp = os.date("%H:%M:%S")
+    local logText = timestamp .. " - " .. message
+    
+    table.insert(logs, logText)
+    if #logs > 20 then
+        table.remove(logs, 1)
+    end
+    
+    -- Clear existing logs
+    for _, child in ipairs(logPanel:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
+    
+    -- Add all logs
+    for i, log in ipairs(logs) do
+        local logLabel = Instance.new("TextLabel")
+        logLabel.Size = UDim2.new(1, -10, 0, 16)
+        logLabel.Position = UDim2.new(0, 5, 0, (i-1)*18)
+        logLabel.BackgroundTransparency = 1
+        logLabel.Text = log
+        logLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+        logLabel.Font = Enum.Font.Gotham
+        logLabel.TextSize = 11
+        logLabel.TextXAlignment = Enum.TextXAlignment.Left
+        logLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        logLabel.Parent = logPanel
+    end
+    
+    -- Adjust canvas size
+    logPanel.CanvasSize = UDim2.new(0, 0, 0, #logs * 18)
 end
 
 -- Function to parse money from string
@@ -257,13 +449,12 @@ end
 local function connectToDiscordGateway()
     if DISCORD_TOKEN == "" then
         statusLabel.Text = "Error: No Discord token"
+        addLog("Error: No Discord token provided")
         return false
     end
     
     statusLabel.Text = "Connecting to Discord..."
-    
-    -- This is a simplified Discord Gateway connection
-    -- Note: Real implementation would require proper WebSocket handling
+    addLog("Connecting to Discord gateway...")
     
     local success, ws = pcall(function()
         return WebSocket.connect(DISCORD_GATEWAY)
@@ -272,6 +463,7 @@ local function connectToDiscordGateway()
     if success and ws then
         websocket = ws
         statusLabel.Text = "Connected to Discord Gateway!"
+        addLog("Connected to Discord gateway")
         
         -- Send identify payload
         local identifyPayload = {
@@ -293,8 +485,11 @@ local function connectToDiscordGateway()
         
         if not success then
             statusLabel.Text = "Failed to identify: " .. tostring(err)
+            addLog("Failed to identify with Discord: " .. tostring(err))
             return false
         end
+        
+        addLog("Sent identify payload to Discord")
         
         -- Listen for messages
         websocket.OnMessage:Connect(function(message)
@@ -309,17 +504,20 @@ local function connectToDiscordGateway()
                         local channelId = data.d.channel_id
                         local content = data.d.content
                         
-                        -- Check if message is from monitored channel
-                        for _, monitoredChannel in ipairs(CHILLI_HUB_CHANNELS) do
-                            if channelId == monitoredChannel then
-                                -- Extract server info from message
-                                local serverInfo = extractServerInfo(content)
-                                if serverInfo.jobId then
-                                    joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
-                                end
-                                break
+                        -- Check if message is from selected channel
+                        local selectedChannel = CHILLI_HUB_CHANNELS[channelDropdown.Text]
+                        if channelId == selectedChannel then
+                            -- Extract server info from message
+                            local serverInfo = extractServerInfo(content)
+                            if serverInfo.jobId then
+                                addLog("Found server: " .. serverInfo.name)
+                                joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
                             end
                         end
+                    elseif data.op == 10 then -- Hello
+                        addLog("Discord handshake received")
+                    elseif data.op == 11 then -- Heartbeat ACK
+                        -- Heartbeat acknowledged
                     end
                 end
             end
@@ -327,6 +525,7 @@ local function connectToDiscordGateway()
         
         websocket.OnClose:Connect(function()
             statusLabel.Text = "Discord connection closed"
+            addLog("Discord connection closed")
             websocket = nil
             if isRunning then
                 wait(3)
@@ -337,6 +536,7 @@ local function connectToDiscordGateway()
         return true
     else
         statusLabel.Text = "Failed to connect to Discord"
+        addLog("Failed to connect to Discord gateway")
         return false
     end
 end
@@ -345,25 +545,34 @@ end
 local function joinJobInstantly(jobId, money, players, serverName)
     if not jobId or jobId == "" or #jobId < 30 then
         statusLabel.Text = "Invalid Job ID"
+        addLog("Invalid Job ID: " .. tostring(jobId))
         return false
     end
+    
+    -- Get current filter values
+    local minMoneyValue = tonumber(minMoneyBox.Text) or 10
+    local maxPlayersValue = tonumber(maxPlayersBox.Text) or 6
     
     -- Check if server meets criteria
     local moneyValue = parseMoney(money)
     local currentPlayers = tonumber(string.match(players, "(%d+)/")) or 0
+    local maxServerPlayers = tonumber(string.match(players, "/(%d+)")) or 8
     
-    if moneyValue < minMoney * 1000000 then
-        statusLabel.Text = "Skipped: Money too low (" .. money .. ")"
+    if moneyValue < minMoneyValue * 1000000 then
+        statusLabel.Text = "Skipped: Money too low (" .. (moneyValue/1000000) .. "M)"
+        addLog("Skipped: Money too low (" .. (moneyValue/1000000) .. "M)")
         return false
     end
     
-    if currentPlayers >= maxPlayers then
+    if currentPlayers >= maxPlayersValue then
         statusLabel.Text = "Skipped: Server full (" .. players .. ")"
+        addLog("Skipped: Server full (" .. players .. ")")
         return false
     end
     
     -- Join the server instantly
     statusLabel.Text = "Joining " .. (serverName or "server") .. "..."
+    addLog("Joining " .. (serverName or "server") .. " (" .. players .. ")")
     lastServerLabel.Text = "Last: " .. (serverName or "Unknown")
     
     -- Use Roblox's TeleportService to join the server
@@ -375,11 +584,13 @@ local function joinJobInstantly(jobId, money, players, serverName)
         serversJoined = serversJoined + 1
         totalMoney = totalMoney + moneyValue
         serversLabel.Text = "Servers: " .. serversJoined
-        moneyLabel.Text = "Money: $" .. totalMoney
+        moneyLabel.Text = "Money: $" .. string.format("%.2fM", totalMoney/1000000)
         statusLabel.Text = "Joined successfully!"
+        addLog("Successfully joined server!")
         return true
     else
         statusLabel.Text = "Failed to join: Server unavailable"
+        addLog("Failed to join: " .. tostring(result))
         return false
     end
 end
@@ -388,6 +599,7 @@ end
 toggleButton.MouseButton1Click:Connect(function()
     if DISCORD_TOKEN == "" then
         statusLabel.Text = "Error: Execute with _G.DISCORD_TOKEN"
+        addLog("Error: No Discord token provided")
         return
     end
     
@@ -396,10 +608,12 @@ toggleButton.MouseButton1Click:Connect(function()
     if isRunning then
         toggleButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
         toggleButton.Text = "STOP AUTOJOINER"
+        addLog("AutoJoiner started")
         connectToDiscordGateway()
     else
         toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
         toggleButton.Text = "START AUTOJOINER"
+        addLog("AutoJoiner stopped")
         if websocket then
             websocket:Close()
             websocket = nil
@@ -407,6 +621,60 @@ toggleButton.MouseButton1Click:Connect(function()
         statusLabel.Text = "Stopped - Ready"
     end
 end)
+
+-- Channel dropdown functionality
+local channelOptions = {"under_500k", "500k_1m", "500k_1m_alt", "1m_10m", "1m_10m_alt", "10m_plus"}
+local dropdownOpen = false
+local dropdownFrame = nil
+
+local function toggleDropdown()
+    if dropdownOpen then
+        if dropdownFrame then
+            dropdownFrame:Destroy()
+            dropdownFrame = nil
+        end
+        dropdownOpen = false
+        return
+    end
+    
+    dropdownOpen = true
+    
+    dropdownFrame = Instance.new("Frame")
+    dropdownFrame.Name = "ChannelDropdownOptions"
+    dropdownFrame.Size = UDim2.new(0, channelDropdown.AbsoluteSize.X, 0, #channelOptions * 25)
+    dropdownFrame.Position = UDim2.new(0, channelDropdown.AbsolutePosition.X - mainContainer.AbsolutePosition.X, 0, channelDropdown.AbsolutePosition.Y - mainContainer.AbsolutePosition.Y + channelDropdown.AbsoluteSize.Y)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    dropdownFrame.BorderSizePixel = 0
+    dropdownFrame.Parent = mainContainer
+    dropdownFrame.ZIndex = 10
+    
+    local dropdownCorner = Instance.new("UICorner")
+    dropdownCorner.CornerRadius = UDim.new(0, 4)
+    dropdownCorner.Parent = dropdownFrame
+    
+    local dropdownLayout = Instance.new("UIListLayout")
+    dropdownLayout.Parent = dropdownFrame
+    
+    for _, option in ipairs(channelOptions) do
+        local optionButton = Instance.new("TextButton")
+        optionButton.Size = UDim2.new(1, 0, 0, 25)
+        optionButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        optionButton.BorderSizePixel = 0
+        optionButton.Text = option
+        optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        optionButton.Font = Enum.Font.Gotham
+        optionButton.TextSize = 12
+        optionButton.Parent = dropdownFrame
+        
+        optionButton.MouseButton1Click:Connect(function()
+            channelDropdown.Text = option
+            addLog("Channel set to: " .. option)
+            toggleDropdown()
+        end)
+    end
+end
+
+channelDropdown.MouseButton1Click:Connect(toggleDropdown)
 
 -- Make the window draggable
 local dragging
@@ -439,9 +707,25 @@ titleBar.InputChanged:Connect(function(input)
     end
 end)
 
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         update(input)
+    end
+end)
+
+-- Close dropdown when clicking elsewhere
+UserInputService.InputBegan:Connect(function(input)
+    if dropdownOpen and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mousePos = input.Position
+        local dropdownPos = dropdownFrame and dropdownFrame.AbsolutePosition
+        local dropdownSize = dropdownFrame and dropdownFrame.AbsoluteSize
+        
+        if dropdownPos and dropdownSize then
+            if not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
+                   mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
+                toggleDropdown()
+            end
+        end
     end
 end)
 
@@ -450,6 +734,8 @@ statusLabel.Text = "Ready - Start AutoJoiner"
 serversLabel.Text = "Servers: 0"
 moneyLabel.Text = "Money: $0"
 lastServerLabel.Text = "Last: None"
+addLog("Fractucul AutoJoiner initialized")
+addLog("Select channel and click START")
 
 print("Fractucul-Style AutoJoiner loaded!")
 print("This is a pure script solution - no external programs needed")
