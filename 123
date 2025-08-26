@@ -1,27 +1,18 @@
--- Fractucul-Style AutoJoiner with Channel Selection
+-- Fractucul-Style AutoJoiner with Real Job ID Monitoring
 -- Usage: Execute with _G.DISCORD_TOKEN = "your_token_here"
 
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 
--- Discord configuration (set by user when executing)
+-- Discord configuration
 local DISCORD_TOKEN = _G.DISCORD_TOKEN or ""
 local DISCORD_GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json"
 
--- Chilli Hub channels
-local CHILLI_HUB_CHANNELS = {
-    ["under_500k"] = "1394958052536619059",
-    ["500k_1m"] = "1394958062166474823",
-    ["1m_10m"] = "1399474388105035988",
-    ["10m_plus"] = "1399474419038032024",
-    ["500k_1m_alt"] = "1400302142702751864",
-    ["1m_10m_alt"] = "1400302392431349770"
-}
-
--- Create main UI in Fractucul style
+-- Create main UI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FractuculAutoJoiner"
 screenGui.Parent = CoreGui
@@ -105,47 +96,11 @@ statusLabel.TextSize = 12
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = statusPanel
 
--- Channel selection
-local channelFrame = Instance.new("Frame")
-channelFrame.Name = "ChannelFrame"
-channelFrame.Size = UDim2.new(1, -20, 0, 30)
-channelFrame.Position = UDim2.new(0, 10, 0, 80)
-channelFrame.BackgroundTransparency = 1
-channelFrame.Parent = mainContainer
-
-local channelLabel = Instance.new("TextLabel")
-channelLabel.Name = "ChannelLabel"
-channelLabel.Size = UDim2.new(0.4, 0, 1, 0)
-channelLabel.Position = UDim2.new(0, 0, 0, 0)
-channelLabel.BackgroundTransparency = 1
-channelLabel.Text = "Monitor Channel:"
-channelLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-channelLabel.Font = Enum.Font.Gotham
-channelLabel.TextSize = 12
-channelLabel.TextXAlignment = Enum.TextXAlignment.Left
-channelLabel.Parent = channelFrame
-
-local channelDropdown = Instance.new("TextButton")
-channelDropdown.Name = "ChannelDropdown"
-channelDropdown.Size = UDim2.new(0.6, 0, 1, 0)
-channelDropdown.Position = UDim2.new(0.4, 0, 0, 0)
-channelDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-channelDropdown.BorderSizePixel = 0
-channelDropdown.Text = "10m_plus"
-channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
-channelDropdown.Font = Enum.Font.Gotham
-channelDropdown.TextSize = 12
-channelDropdown.Parent = channelFrame
-
-local dropdownCorner = Instance.new("UICorner")
-dropdownCorner.CornerRadius = UDim.new(0, 6)
-dropdownCorner.Parent = channelDropdown
-
 -- Toggle button
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Size = UDim2.new(1, -20, 0, 40)
-toggleButton.Position = UDim2.new(0, 10, 0, 120)
+toggleButton.Position = UDim2.new(0, 10, 0, 80)
 toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
 toggleButton.BorderSizePixel = 0
 toggleButton.Text = "START AUTOJOINER"
@@ -162,7 +117,7 @@ toggleCorner.Parent = toggleButton
 local statsPanel = Instance.new("Frame")
 statsPanel.Name = "StatsPanel"
 statsPanel.Size = UDim2.new(1, -20, 0, 80)
-statsPanel.Position = UDim2.new(0, 10, 0, 170)
+statsPanel.Position = UDim2.new(0, 10, 0, 130)
 statsPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 statsPanel.BorderSizePixel = 0
 statsPanel.Parent = mainContainer
@@ -207,14 +162,27 @@ lastServerLabel.TextSize = 12
 lastServerLabel.TextXAlignment = Enum.TextXAlignment.Left
 lastServerLabel.Parent = statsPanel
 
+-- WebSocket connection info
+local wsInfo = Instance.new("TextLabel")
+wsInfo.Name = "WSInfo"
+wsInfo.Size = UDim2.new(1, -20, 0, 30)
+wsInfo.Position = UDim2.new(0, 10, 0, 220)
+wsInfo.BackgroundTransparency = 1
+wsInfo.Text = "WebSocket: 127.0.0.1:51948"
+wsInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
+wsInfo.Font = Enum.Font.Gotham
+wsInfo.TextSize = 10
+wsInfo.TextXAlignment = Enum.TextXAlignment.Left
+wsInfo.Parent = mainContainer
+
 -- AutoJoiner logic
 local isRunning = false
 local serversJoined = 0
 local totalMoney = 0
-local minMoney = 10 -- Minimum 10M/s for 10m+ channel
+local minMoney = 10 -- Minimum 10M/s
 local maxPlayers = 7 -- Don't join if 7/8 or 8/8
 local discordConnected = false
-local selectedChannel = "10m_plus"
+local websocket = nil
 
 -- Check if token is provided
 if DISCORD_TOKEN == "" then
@@ -226,9 +194,7 @@ end
 -- Function to parse money from string
 local function parseMoney(moneyStr)
     if not moneyStr then return 0 end
-    
     local cleanStr = string.gsub(moneyStr, "[^%d%.]", "")
-    
     if string.find(moneyStr, "K") then
         return tonumber(cleanStr) * 1000
     elseif string.find(moneyStr, "M") then
@@ -238,61 +204,70 @@ local function parseMoney(moneyStr)
     end
 end
 
--- Function to extract server info from Discord message
-local function extractServerInfo(message)
-    local info = {
-        name = "Unknown",
-        money = 0,
-        players = "0/8",
-        jobId = nil
-    }
+-- Function to connect to WebSocket server (like Fractucul)
+local function connectToWebSocket()
+    statusLabel.Text = "Connecting to WebSocket..."
     
-    -- Look for money pattern
-    local moneyMatch = string.match(message, "💰 Money per sec[^%d]*(%d+%.?%d*[MK]?)")
-    if not moneyMatch then
-        moneyMatch = string.match(message, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
-    end
-    if moneyMatch then
-        info.money = parseMoney(moneyMatch)
-    end
+    -- This connects to the local WebSocket server that monitors Discord
+    -- (This is how Fractucul works - external program handles Discord)
+    local success, ws = pcall(function()
+        return WebSocket.connect("ws://127.0.0.1:51948")
+    end)
     
-    -- Look for players pattern
-    local playersMatch = string.match(message, "👥 Players[^%d]*(%d+/%d+)")
-    if not playersMatch then
-        playersMatch = string.match(message, "Players[^%d]*(%d+/%d+)")
+    if success and ws then
+        websocket = ws
+        statusLabel.Text = "Connected to WebSocket!"
+        
+        websocket.OnMessage:Connect(function(message)
+            if isRunning then
+                -- Parse the message (should contain job info)
+                local success, data = pcall(function()
+                    return HttpService:JSONDecode(message)
+                end)
+                
+                if success and data then
+                    -- Extract server info from the message
+                    local serverInfo = {
+                        name = data.name or "Unknown",
+                        money = data.money or "0M",
+                        players = data.players or "0/8",
+                        jobId = data.jobId or data.script
+                    }
+                    
+                    if serverInfo.jobId then
+                        joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
+                    end
+                else
+                    -- Try to extract job ID directly from message
+                    local jobId = string.match(message, "7IRZ[%w=]+")
+                    if jobId and isRunning then
+                        joinJobInstantly(jobId, "10M", "0/8", "Chilli Hub Server")
+                    end
+                end
+            end
+        end)
+        
+        websocket.OnClose:Connect(function()
+            statusLabel.Text = "WebSocket disconnected"
+            websocket = nil
+            if isRunning then
+                -- Try to reconnect after a delay
+                wait(3)
+                connectToWebSocket()
+            end
+        end)
+        
+        return true
+    else
+        statusLabel.Text = "WebSocket not found - start external program"
+        return false
     end
-    if playersMatch then
-        info.players = playersMatch
-    end
-    
-    -- Look for server name
-    local nameMatch = string.match(message, "🏷️ Name[^\n]-%*([^%*]+)%*")
-    if not nameMatch then
-        nameMatch = string.match(message, "Name[^\n]-%*([^%*]+)%*")
-    end
-    if nameMatch then
-        info.name = nameMatch
-    end
-    
-    -- Look for Job ID (PC)
-    local jobIdMatch = string.match(message, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
-    if not jobIdMatch then
-        jobIdMatch = string.match(message, "Job ID %(PC%)[^\n]-([%w%=]+)")
-    end
-    if not jobIdMatch then
-        jobIdMatch = string.match(message, "7IRZ[%w=]+") -- Common Chilli Hub pattern
-    end
-    if jobIdMatch then
-        info.jobId = jobIdMatch
-    end
-    
-    return info
 end
 
 -- Function to join a job instantly
 local function joinJobInstantly(jobId, money, players, serverName)
-    if not jobId or jobId == "" then
-        statusLabel.Text = "Error: No Job ID found"
+    if not jobId or jobId == "" or #jobId < 30 then
+        statusLabel.Text = "Invalid Job ID"
         return false
     end
     
@@ -312,7 +287,9 @@ local function joinJobInstantly(jobId, money, players, serverName)
     
     -- Join the server instantly
     statusLabel.Text = "Joining " .. (serverName or "server") .. "..."
+    lastServerLabel.Text = "Last: " .. (serverName or "Unknown")
     
+    -- Use Roblox's TeleportService to join the server
     local success, result = pcall(function()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
     end)
@@ -322,143 +299,13 @@ local function joinJobInstantly(jobId, money, players, serverName)
         totalMoney = totalMoney + moneyValue
         serversLabel.Text = "Servers: " .. serversJoined
         moneyLabel.Text = "Money: $" .. totalMoney
-        lastServerLabel.Text = "Last: " .. (serverName or "Unknown")
         statusLabel.Text = "Joined successfully!"
         return true
     else
-        statusLabel.Text = "Failed to join: Server unavailable"
+        statusLabel.Text = "Failed to join: " .. tostring(result)
         return false
     end
 end
-
--- Discord WebSocket connection simulation
-local function connectToDiscord()
-    if DISCORD_TOKEN == "" then
-        statusLabel.Text = "Error: No Discord token provided"
-        return false
-    end
-    
-    statusLabel.Text = "Connecting to Discord..."
-    
-    -- Simulate Discord connection
-    spawn(function()
-        wait(1) -- Simulate connection time
-        
-        discordConnected = true
-        statusLabel.Text = "Connected to Discord - Monitoring " .. selectedChannel
-        
-        -- Simulate receiving messages from selected channel
-        while discordConnected and isRunning do
-            wait(math.random(3, 8))
-            
-            -- Different servers based on selected channel
-            local servers = {}
-            
-            if selectedChannel == "10m_plus" then
-                servers = {
-                    {
-                        name = "Brainrot Notify | Chilli Hub",
-                        money = "20M",
-                        players = "6/8",
-                        jobId = "7IRZ20k03L0IG0kK5HOWB4ITGjKHpg0oBHms2SwEytxLCROZU4GDqEkOrgNqtNNDaOGhK5KDpIUBbtE7HEHDETTCEuLHbuQ"
-                    },
-                    {
-                        name = "Chilli Proxy | VIP Server",
-                        money = "15M",
-                        players = "5/8",
-                        jobId = "7IRZ20k03L01G0kK5HOWB4ITGjKHpg0oBHms2SwEytxLCROZU4GDqEkOrgNqtNNDaOGTrk5KDpIUBbtE7HEHDETTCEuLHbuQ"
-                    },
-                    {
-                        name = "Money Farm | AutoJoin",
-                        money = "25M",
-                        players = "4/8",
-                        jobId = "7IRZ20k03L01G0kK5HOWB4ITGjKHpg0oBHms2SwEytxLCROZU4GDqEkOrgNqtNNDaOGTrk5KDpIUBbtE7HEHDETTCEuLHbuQ"
-                    }
-                }
-            elseif selectedChannel == "1m_10m" then
-                servers = {
-                    {
-                        name = "Mid Tier Server",
-                        money = "8M",
-                        players = "5/8",
-                        jobId = "8JSA30k04M02H1lL6IPXC5JUHkLIqh1pCInt3TxFzuyMDSPYV5HErFlPsHOoOOEbpHIrL6LEVCcuF8IFIEUUVDFvMIcvN"
-                    }
-                }
-            else
-                servers = {
-                    {
-                        name = "Low Tier Server",
-                        money = "500K",
-                        players = "3/8",
-                        jobId = "9KTB41l15N13I2mM7JQYD6KVImLJri2qDJou4UyGAvzNETQZW6IFsGmQtIQpPPFcqIJsM7MFWDdvG9JGJFWVWEGwNJdwO"
-                    }
-                }
-            end
-            
-            local server = servers[math.random(1, #servers)]
-            
-            if isRunning then
-                joinJobInstantly(server.jobId, server.money, server.players, server.name)
-            end
-        end
-    end)
-    
-    return true
-end
-
--- Channel dropdown functionality
-local dropdownOpen = false
-local dropdownOptions = Instance.new("Frame")
-dropdownOptions.Name = "DropdownOptions"
-dropdownOptions.Size = UDim2.new(0.6, 0, 0, 120)
-dropdownOptions.Position = UDim2.new(0.4, 0, 0, 30)
-dropdownOptions.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-dropdownOptions.BorderSizePixel = 0
-dropdownOptions.Visible = false
-dropdownOptions.Parent = channelFrame
-
-local dropdownOptionsCorner = Instance.new("UICorner")
-dropdownOptionsCorner.CornerRadius = UDim.new(0, 6)
-dropdownOptionsCorner.Parent = dropdownOptions
-
--- Create channel options
-local channels = {"10m_plus", "1m_10m", "500k_1m", "under_500k"}
-for i, channel in ipairs(channels) do
-    local option = Instance.new("TextButton")
-    option.Name = channel
-    option.Size = UDim2.new(1, 0, 0, 30)
-    option.Position = UDim2.new(0, 0, 0, (i-1)*30)
-    option.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-    option.BorderSizePixel = 0
-    option.Text = channel
-    option.TextColor3 = Color3.fromRGB(255, 255, 255)
-    option.Font = Enum.Font.Gotham
-    option.TextSize = 12
-    option.Parent = dropdownOptions
-    
-    option.MouseButton1Click:Connect(function()
-        selectedChannel = channel
-        channelDropdown.Text = channel
-        dropdownOptions.Visible = false
-        dropdownOpen = false
-        
-        -- Adjust min money based on channel
-        if channel == "10m_plus" then
-            minMoney = 10
-        elseif channel == "1m_10m" then
-            minMoney = 1
-        else
-            minMoney = 0
-        end
-        
-        statusLabel.Text = "Channel set to: " .. channel
-    end)
-end
-
-channelDropdown.MouseButton1Click:Connect(function()
-    dropdownOpen = not dropdownOpen
-    dropdownOptions.Visible = dropdownOpen
-end)
 
 -- Toggle button functionality
 toggleButton.MouseButton1Click:Connect(function()
@@ -472,11 +319,14 @@ toggleButton.MouseButton1Click:Connect(function()
     if isRunning then
         toggleButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
         toggleButton.Text = "STOP AUTOJOINER"
-        connectToDiscord()
+        connectToWebSocket()
     else
         toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
         toggleButton.Text = "START AUTOJOINER"
-        discordConnected = false
+        if websocket then
+            websocket:Close()
+            websocket = nil
+        end
         statusLabel.Text = "Stopped - Ready"
     end
 end)
@@ -518,28 +368,13 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
     end
 end)
 
--- Close dropdown when clicking elsewhere
-game:GetService("UserInputService").InputBegan:Connect(function(input)
-    if dropdownOpen and input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local mousePos = input.Position
-        local dropdownPos = dropdownOptions.AbsolutePosition
-        local dropdownSize = dropdownOptions.AbsoluteSize
-        
-        if not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
-               mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
-            dropdownOptions.Visible = false
-            dropdownOpen = false
-        end
-    end
-end)
-
 -- Initial setup
-statusLabel.Text = "Ready - Select channel and start"
+statusLabel.Text = "Ready - Start AutoJoiner"
 serversLabel.Text = "Servers: 0"
 moneyLabel.Text = "Money: $0"
 lastServerLabel.Text = "Last: None"
 
 print("Fractucul-Style AutoJoiner loaded!")
-print("Default channel: 10m_plus")
-print("Use channel dropdown to select monitoring channel")
+print("This script connects to a WebSocket server at 127.0.0.1:51948")
+print("Make sure you have the external Discord monitor running")
 print("Click START AUTOJOINER to begin")
