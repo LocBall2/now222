@@ -1,12 +1,10 @@
 -- Mobile-Compatible Fractucul-Style AutoJoiner
--- Pure script solution - no external program needed
--- Usage: Execute with _G.DISCORD_TOKEN = "your_token_here"
+-- Fixed version with improved Discord connection and message parsing
 
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
@@ -332,11 +330,10 @@ logLayout.Padding = UDim.new(0, 2)
 local isRunning = false
 local serversJoined = 0
 local totalMoney = 0
-local minMoney = 10 -- Minimum 10M/s
-local maxPlayers = 6 -- Don't join if 6/8 or more
-local discordConnected = false
 local websocket = nil
 local logs = {}
+local heartbeatInterval = nil
+local lastSequence = nil
 
 -- Check if token is provided
 if DISCORD_TOKEN == "" then
@@ -458,7 +455,7 @@ local function joinJobInstantly(jobId, money, players, serverName)
     local maxPlayersValue = tonumber(maxPlayersBox.Text) or 6
     
     -- Check if server meets criteria
-    local moneyValue = parseMoney(money)
+    local moneyValue = money or 0
     local currentPlayers = tonumber(string.match(players, "(%d+)/")) or 0
     local maxServerPlayers = tonumber(string.match(players, "/(%d+)")) or 8
     
@@ -499,6 +496,18 @@ local function joinJobInstantly(jobId, money, players, serverName)
     end
 end
 
+-- Function to send heartbeat to Discord
+local function sendHeartbeat()
+    if websocket and websocket.Connected then
+        local payload = {
+            op = 1,
+            d = lastSequence
+        }
+        websocket:Send(HttpService:JSONEncode(payload))
+        addLog("Sent heartbeat to Discord")
+    end
+end
+
 -- Function to connect to Discord Gateway directly
 local function connectToDiscordGateway()
     if DISCORD_TOKEN == "" then
@@ -511,56 +520,71 @@ local function connectToDiscordGateway()
     addLog("Connecting to Discord gateway...")
     
     local success, ws = pcall(function()
-        return syn.websocket.connect(DISCORD_GATEWAY)
-    end)
-    
-    if not success then
-        success, ws = pcall(function()
+        if syn and syn.websocket then
+            return syn.websocket.connect(DISCORD_GATEWAY)
+        else
             return WebSocket.connect(DISCORD_GATEWAY)
-        end)
-    end
+        end
+    end)
     
     if success and ws then
         websocket = ws
         statusLabel.Text = "Connected to Discord Gateway!"
         addLog("Connected to Discord gateway")
         
-        -- Send identify payload
-        local identifyPayload = {
-            op = 2,
-            d = {
-                token = DISCORD_TOKEN,
-                properties = {
-                    os = "Windows",
-                    browser = "Chrome", 
-                    device = ""
-                },
-                intents = 513 -- GUILD_MESSAGES + MESSAGE_CONTENT
-            }
-        }
-        
-        local success, err = pcall(function()
-            websocket:Send(HttpService:JSONEncode(identifyPayload))
-        end)
-        
-        if not success then
-            statusLabel.Text = "Failed to identify: " .. tostring(err)
-            addLog("Failed to identify with Discord: " .. tostring(err))
-            return false
-        end
-        
-        addLog("Sent identify payload to Discord")
-        
         -- Listen for messages
         websocket.OnMessage:Connect(function(message)
-            if isRunning then
-                local success, data = pcall(function()
-                    return HttpService:JSONDecode(message)
-                end)
+            local success, data = pcall(function()
+                return HttpService:JSONDecode(message)
+            end)
+            
+            if success and data then
+                -- Store sequence number for heartbeats
+                if data.s then
+                    lastSequence = data.s
+                end
                 
-                if success and data then
-                    -- Handle Discord Gateway events
-                    if data.t == "MESSAGE_CREATE" then
+                -- Handle Discord Gateway events
+                if data.op == 10 then -- Hello
+                    addLog("Discord handshake received")
+                    heartbeatInterval = data.d.heartbeat_interval / 1000
+                    
+                    -- Send identify payload
+                    local identifyPayload = {
+                        op = 2,
+                        d = {
+                            token = DISCORD_TOKEN,
+                            properties = {
+                                os = "Windows",
+                                browser = "Chrome", 
+                                device = ""
+                            },
+                            intents = 513 -- GUILD_MESSAGES + MESSAGE_CONTENT
+                        }
+                    }
+                    
+                    local success, err = pcall(function()
+                        websocket:Send(HttpService:JSONEncode(identifyPayload))
+                    end)
+                    
+                    if not success then
+                        statusLabel.Text = "Failed to identify: " .. tostring(err)
+                        addLog("Failed to identify with Discord: " .. tostring(err))
+                        return false
+                    end
+                    
+                    addLog("Sent identify payload to Discord")
+                    
+                    -- Start heartbeat timer
+                    spawn(function()
+                        while websocket and websocket.Connected do
+                            sendHeartbeat()
+                            wait(heartbeatInterval)
+                        end
+                    end)
+                    
+                elseif data.t == "MESSAGE_CREATE" then
+                    if isRunning then
                         local channelId = data.d.channel_id
                         local content = data.d.content
                         
@@ -572,13 +596,13 @@ local function connectToDiscordGateway()
                             if serverInfo.jobId then
                                 addLog("Found server: " .. serverInfo.name)
                                 joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
+                            else
+                                addLog("No valid job ID found in message")
                             end
                         end
-                    elseif data.op == 10 then -- Hello
-                        addLog("Discord handshake received")
-                    elseif data.op == 11 then -- Heartbeat ACK
-                        -- Heartbeat acknowledged
                     end
+                elseif data.op == 11 then -- Heartbeat ACK
+                    -- Heartbeat acknowledged
                 end
             end
         end)
@@ -596,7 +620,7 @@ local function connectToDiscordGateway()
         return true
     else
         statusLabel.Text = "Failed to connect to Discord"
-        addLog("Failed to connect to Discord gateway")
+        addLog("Failed to connect to Discord gateway: " .. tostring(ws))
         return false
     end
 end
