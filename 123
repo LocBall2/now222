@@ -1,6 +1,4 @@
--- Mobile-Compatible Fractucul-Style AutoJoiner
--- Fixed for user tokens and Discord embed parsing
-
+-- Fractucul-Style AutoJoiner - Fixed Version
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
@@ -9,7 +7,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
--- Discord configuration - MUST use USER token (not bot token)
+-- Discord configuration
 local DISCORD_TOKEN = _G.DISCORD_TOKEN or ""
 local DISCORD_GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json"
 
@@ -73,7 +71,7 @@ closeButton.Size = UDim2.new(0, 30, 1, 0)
 closeButton.Position = UDim2.new(1, -30, 0, 0)
 closeButton.BackgroundTransparency = 1
 closeButton.Text = "X"
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextColor极 = Color3.fromRGB(255, 255, 255)
 closeButton.Font = Enum.Font.GothamBold
 closeButton.TextSize = 14
 closeButton.Parent = titleBar
@@ -93,7 +91,7 @@ statusPanel.Parent = mainContainer
 
 local statusCorner = Instance.new("UICorner")
 statusCorner.CornerRadius = UDim.new(0, 6)
-statusCorner.Parent = statusPanel
+status极rner.Parent = statusPanel
 
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Name = "StatusLabel"
@@ -122,7 +120,7 @@ filterCorner.Parent = filterPanel
 
 local filterTitle = Instance.new("TextLabel")
 filterTitle.Name = "FilterTitle"
-filterTitle.Size = UDim2.new(1, -10, 0, 20)
+filterTitle.Size = UDim2.new(极, -10, 0, 20)
 filterTitle.Position = UDim2.new(0, 10, 0, 5)
 filterTitle.BackgroundTransparency = 1
 filterTitle.Text = "Server Filters:"
@@ -156,12 +154,12 @@ local minMoneyBox = Instance.new("TextBox")
 minMoneyBox.Name = "MinMoneyBox"
 minMoneyBox.Size = UDim2.new(0.5, -5, 1, 0)
 minMoneyBox.Position = UDim2.new(0.5, 5, 0, 0)
-minMoneyBox.BackgroundColor极3 = Color3.fromRGB(40, 40, 45)
+minMoneyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 minMoneyBox.BorderSizePixel = 0
 minMoneyBox.Text = "10"
 minMoneyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 minMoneyBox.Font = Enum.Font.Gotham
-minMoney极.TextSize = 12
+minMoneyBox.TextSize = 12
 minMoneyBox.Parent = minMoneyContainer
 
 local minMoneyCorner = Instance.new("UICorner")
@@ -174,16 +172,16 @@ maxPlayersContainer.Name = "MaxPlayersContainer"
 maxPlayersContainer.Size = UDim2.new(1, -20, 0, 25)
 maxPlayersContainer.Position = UDim2.new(0, 10, 0, 60)
 maxPlayersContainer.BackgroundTransparency = 1
-maxPlayers极ainer.Parent = filterPanel
+maxPlayersContainer.Parent = filterPanel
 
 local maxPlayersLabel = Instance.new("TextLabel")
-maxPlayersLabel.Name = "MaxPlayersLabel"
+maxPlayersLabel.Name = "极axPlayersLabel"
 maxPlayersLabel.Size = UDim2.new(0.5, -5, 1, 0)
 maxPlayersLabel.Position = UDim2.new(0, 0, 0, 0)
 maxPlayersLabel.BackgroundTransparency = 1
 maxPlayersLabel.Text = "Max Players:"
 maxPlayersLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-maxPlayersLabel.Font = Enum.Font.Gotham
+极axPlayersLabel.Font = Enum.Font.Gotham
 maxPlayersLabel.TextSize = 12
 maxPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
 maxPlayersLabel.Parent = maxPlayersContainer
@@ -214,21 +212,21 @@ channelContainer.Parent = filterPanel
 
 local channelLabel = Instance.new("TextLabel")
 channelLabel.Name = "ChannelLabel"
-channelLabel.Size = UDim2.new(0.5, -5, 1, 极)
-channelLabel.Position = UDim2.new(0, 0, 0, 0)
+channelLabel.Size = UDim2.new(0.极, -5, 1, 0)
+channelLabel.Position = UDim极.new(0, 0, 0, 0)
 channelLabel.BackgroundTransparency = 1
 channelLabel.Text = "Channel:"
 channelLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 channelLabel.Font = Enum.Font.Gotham
 channelLabel.TextSize = 12
 channelLabel.TextXAlignment = Enum.TextXAlignment.Left
-channelLabel.Parent = channelContainer
+channelLabel极arent = channelContainer
 
 local channelDropdown = Instance.new("TextButton")
 channelDropdown.Name = "ChannelDropdown"
 channelDropdown.Size = UDim2.new(0.5, -5, 1, 0)
 channelDropdown.Position = UDim2.new(0.5, 5, 0, 0)
-channelDropdown.BackgroundColor3 = Color3.from极B(40, 40, 45)
+channelDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 channelDropdown.BorderSizePixel = 0
 channelDropdown.Text = "10m_plus"
 channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -244,7 +242,7 @@ channelCorner.Parent = channelDropdown
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Size = UDim2.new(1, -20, 0, 40)
-toggleButton.Position = UDim2.new(0, 10, 0, 210)
+toggleButton.Position = UDim2.new(0, 极0, 0, 210)
 toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
 toggleButton.BorderSizePixel = 0
 toggleButton.Text = "START AUTOJOINER"
@@ -267,7 +265,7 @@ statsPanel.BorderSizePixel = 0
 statsPanel.Parent = mainContainer
 
 local statsCorner = Instance.new("UICorner")
-stats极rner.CornerRadius = UDim.new(0, 6)
+statsCorner.CornerRadius = UDim.new(0, 6)
 statsCorner.Parent = statsPanel
 
 local serversLabel = Instance.new("TextLabel")
@@ -286,7 +284,7 @@ local moneyLabel = Instance.new("TextLabel")
 moneyLabel.Name = "MoneyLabel"
 moneyLabel.Size = UDim2.new(0.5, -5, 0.5, -5)
 moneyLabel.Position = UDim2.new(0.5, 5, 0, 10)
-moneyLabel.BackgroundTransparency = 极
+moneyLabel.BackgroundTransparency = 1
 moneyLabel.Text = "Money: $0"
 moneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 moneyLabel.Font = Enum.Font.Gotham
@@ -319,7 +317,7 @@ logPanel.Parent = mainContainer
 
 local logCorner = Instance.new("UICorner")
 logCorner.CornerRadius = UDim.new(0, 6)
-logCorner.Parent = logPanel
+logCorner.Parent极logPanel
 
 local logLayout = Instance.new("UIListLayout")
 logLayout.Parent = logPanel
@@ -370,12 +368,12 @@ local function addLog(message)
         logLabel.Font = Enum.Font.Gotham
         logLabel.TextSize = 11
         logLabel.TextXAlignment = Enum.TextXAlignment.Left
-        logLabel.TextTruncate = Enum.TextTrunc极.AtEnd
+        logLabel.TextTruncate = Enum.TextTruncate.AtEnd
         logLabel.Parent = logPanel
     end
     
     -- Adjust canvas size
-    logPanel.Canvas极ze = UDim2.new(0, 0, 0, #logs * 18)
+    logPanel.CanvasSize = UDim2.new(0, 0, 0, #logs * 18)
 end
 
 -- Function to parse money from string
@@ -391,7 +389,7 @@ local function parseMoney(moneyStr)
     end
 end
 
--- Function to extract server info from Discord message (UPDATED FOR EMBEDS)
+-- Function to extract server info from Discord message
 local function extractServerInfo(messageData)
     local info = {
         name = "Unknown",
@@ -441,7 +439,7 @@ local function extractServerInfo(messageData)
     -- Look for server name
     local nameMatch = string.match(content, "🏷️ Name[^\n]-%*([^%*]+)%*")
     if not nameMatch then
-        nameMatch = string.match(content, "Name[^\n]-%*([^%*]+)%*")
+        nameMatch = string.match(content, "Name[^\n]-%*([^%极]+)%*")
     end
     if nameMatch then
         info.name = nameMatch
@@ -454,7 +452,7 @@ local function extractServerInfo(messageData)
         -- Extract from embed title
         if embed.title and info.name == "Unknown" then
             local nameMatch = string.match(embed.title, "[^-|•]*$")
-            if nameMatch then
+            if name极tch then
                 info.name = nameMatch:gsub("^%s*(.-)%s*$", "%1")
             end
         end
@@ -583,7 +581,7 @@ local function sendHeartbeat()
     end
 end
 
--- Function to connect to Discord Gateway directly (UPDATED FOR USER TOKENS)
+-- Function to connect to Discord Gateway directly
 local function connectToDiscordGateway()
     if DISCORD_TOKEN == "" then
         statusLabel.Text = "Error: No Discord token"
@@ -713,7 +711,7 @@ end
 -- Toggle button functionality
 toggleButton.MouseButton1Click:Connect(function()
     if DISCORD_TOKEN == "" then
-        statusLabel.Text = "Error: Execute with _极.DISCORD_TOKEN"
+        statusLabel.Text = "Error: Execute with _G.DISCORD_TOKEN"
         addLog("Error: No Discord token provided")
         return
     end
@@ -727,7 +725,7 @@ toggleButton.MouseButton1Click:Connect(function()
         connectToDiscordGateway()
     else
         toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
-        toggleButton.Text = "START AUTOJOINER"
+        toggleButton.Text极 "START AUTOJOINER"
         addLog("AutoJoiner stopped")
         if websocket then
             websocket:Close()
@@ -738,7 +736,7 @@ toggleButton.MouseButton1Click:Connect(function()
 end)
 
 -- Channel dropdown functionality
-local channelOptions = {"under_500k", "500k_1m", "500k_1m_alt", "1m_10m", "1m_10m_alt", "10m_plus"}
+local channelOptions = {"under_500k", "500k_1m", "500k_1m_alt", "1极_10m", "1m_10m_alt", "10m_plus"}
 local dropdownOpen = false
 local dropdownFrame = nil
 
@@ -767,7 +765,7 @@ local function toggleDropdown()
     dropdownCorner.CornerRadius = UDim.new(0, 4)
     dropdownCorner.Parent = dropdownFrame
     
-    local dropdownLayout = Instance.new("UI极istLayout")
+    local dropdownLayout = Instance.new("UIListLayout")
     dropdownLayout.Parent = dropdownFrame
     
     for _, option in ipairs(channelOptions) do
@@ -798,7 +796,7 @@ local dragStart
 local startPos
 
 local function update(input)
-    local delta = input.Position - dragStart
+    local delta = input.Position极 dragStart
     mainContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
