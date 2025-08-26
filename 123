@@ -1,5 +1,5 @@
 -- Mobile-Compatible Fractucul-Style AutoJoiner
--- Fixed version with improved Discord connection and message parsing
+-- Fixed for user tokens and Discord embed parsing
 
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
@@ -9,7 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
--- Discord configuration
+-- Discord configuration - MUST use USER token (not bot token)
 local DISCORD_TOKEN = _G.DISCORD_TOKEN or ""
 local DISCORD_GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json"
 
@@ -391,8 +391,8 @@ local function parseMoney(moneyStr)
     end
 end
 
--- Function to extract server info from Discord message
-local function extractServerInfo(message)
+-- Function to extract server info from Discord message (UPDATED FOR EMBEDS)
+local function extractServerInfo(messageData)
     local info = {
         name = "Unknown",
         money = 0,
@@ -400,43 +400,98 @@ local function extractServerInfo(message)
         jobId = nil
     }
     
-    -- Look for money pattern
-    local moneyMatch = string.match(message, "💰 Money per sec[^%d]*(%d+%.?%d*[MK]?)")
-    if not moneyMatch then
-        moneyMatch = string.match(message, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
-    end
-    if moneyMatch then
-        info.money = parseMoney(moneyMatch)
-    end
-    
-    -- Look for players pattern
-    local playersMatch = string.match(message, "👥 Players[^%d]*(%d+/%d+)")
-    if not playersMatch then
-        playersMatch = string.match(message, "Players[^%d]*(%d+/%d+)")
-    end
-    if playersMatch then
-        info.players = playersMatch
-    end
-    
-    -- Look for server name
-    local nameMatch = string.match(message, "🏷️ Name[^\n]-%*([^%*]+)%*")
-    if not nameMatch then
-        nameMatch = string.match(message, "Name[^\n]-%*([^%*]+)%*")
-    end
-    if nameMatch then
-        info.name = nameMatch
-    end
-    
-    -- Look for Job ID (PC) - most important
-    local jobIdMatch = string.match(message, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
-    if not jobIdMatch then
-        jobIdMatch = string.match(message, "Job ID %(PC%)[^\n]-([%w%=]+)")
-    end
-    if not jobIdMatch then
-        jobIdMatch = string.match(message, "7IRZ[%w=]+") -- Common Chilli Hub pattern
-    end
-    if jobIdMatch then
-        info.jobId = jobIdMatch
+    -- Check if message has embeds
+    if messageData.embeds and #messageData.embeds > 0 then
+        local embed = messageData.embeds[1]
+        
+        -- Extract from embed title
+        if embed.title then
+            local nameMatch = string.match(embed.title, "[^-|•]*$")
+            if nameMatch then
+                info.name = nameMatch:gsub("^%s*(.-)%s*$", "%1")
+            end
+        end
+        
+        -- Extract from embed description
+        if embed.description then
+            -- Look for money pattern
+            local moneyMatch = string.match(embed.description, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+            if moneyMatch then
+                info.money = parseMoney(moneyMatch)
+            end
+            
+            -- Look for players pattern
+            local playersMatch = string.match(embed.description, "Players[^%d]*(%d+/%d+)")
+            if playersMatch then
+                info.players = playersMatch
+            end
+            
+            -- Look for Job ID (PC) - most important
+            local jobIdMatch = string.match(embed.description, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
+            if not jobIdMatch then
+                jobIdMatch = string.match(embed.description, "Job ID %(PC%)[^\n]-([%w%=]+)")
+            end
+            if jobIdMatch then
+                info.jobId = jobIdMatch
+            end
+        end
+        
+        -- Extract from embed fields
+        if embed.fields then
+            for _, field in ipairs(embed.fields) do
+                if field.name == "Money per sec" or field.name == "💰 Money per sec" then
+                    info.money = parseMoney(field.value)
+                elseif field.name == "Players" or field.name == "👥 Players" then
+                    info.players = field.value
+                elseif field.name == "Name" or field.name == "🏷️ Name" then
+                    info.name = field.value:gsub("%*", "")
+                elseif field.name == "Job ID (PC)" then
+                    info.jobId = field.value:gsub("`", "")
+                end
+            end
+        end
+    else
+        -- Fallback to parsing regular message content
+        local content = messageData.content
+        
+        -- Look for money pattern
+        local moneyMatch = string.match(content, "💰 Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+        if not moneyMatch then
+            moneyMatch = string.match(content, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+        end
+        if moneyMatch then
+            info.money = parseMoney(moneyMatch)
+        end
+        
+        -- Look for players pattern
+        local playersMatch = string.match(content, "👥 Players[^%d]*(%d+/%d+)")
+        if not playersMatch then
+            playersMatch = string.match(content, "Players[^%d]*(%d+/%d+)")
+        end
+        if playersMatch then
+            info.players = playersMatch
+        end
+        
+        -- Look for server name
+        local nameMatch = string.match(content, "🏷️ Name[^\n]-%*([^%*]+)%*")
+        if not nameMatch then
+            nameMatch = string.match(content, "Name[^\n]-%*([^%*]+)%*")
+        end
+        if nameMatch then
+            info.name = nameMatch
+        end
+        
+        -- Look for Job ID (PC) - most important
+        local jobIdMatch = string.match(content, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
+        if not jobIdMatch then
+            jobIdMatch = string.match(content, "Job ID %(PC%)[^\n]-([%w%=]+)")
+        end
+        if not jobIdMatch then
+            jobIdMatch = string.match(content, "7IRZ[%w=]+") -- Common Chilli Hub pattern
+        end
+        if jobIdMatch then
+            info.jobId = jobIdMatch
+        end
     end
     
     return info
@@ -508,7 +563,7 @@ local function sendHeartbeat()
     end
 end
 
--- Function to connect to Discord Gateway directly
+-- Function to connect to Discord Gateway directly (UPDATED FOR USER TOKENS)
 local function connectToDiscordGateway()
     if DISCORD_TOKEN == "" then
         statusLabel.Text = "Error: No Discord token"
@@ -549,7 +604,7 @@ local function connectToDiscordGateway()
                     addLog("Discord handshake received")
                     heartbeatInterval = data.d.heartbeat_interval / 1000
                     
-                    -- Send identify payload
+                    -- Send identify payload (USER token format)
                     local identifyPayload = {
                         op = 2,
                         d = {
@@ -559,7 +614,11 @@ local function connectToDiscordGateway()
                                 browser = "Chrome", 
                                 device = ""
                             },
-                            intents = 513 -- GUILD_MESSAGES + MESSAGE_CONTENT
+                            intents = 513, -- GUILD_MESSAGES + MESSAGE_CONTENT
+                            presence = {
+                                status = "online",
+                                afk = false
+                            }
                         }
                     }
                     
@@ -586,23 +645,33 @@ local function connectToDiscordGateway()
                 elseif data.t == "MESSAGE_CREATE" then
                     if isRunning then
                         local channelId = data.d.channel_id
-                        local content = data.d.content
                         
                         -- Check if message is from selected channel
                         local selectedChannel = CHILLI_HUB_CHANNELS[channelDropdown.Text]
                         if channelId == selectedChannel then
-                            -- Extract server info from message
-                            local serverInfo = extractServerInfo(content)
+                            -- Extract server info from message (including embeds)
+                            local serverInfo = extractServerInfo(data.d)
                             if serverInfo.jobId then
                                 addLog("Found server: " .. serverInfo.name)
                                 joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
                             else
                                 addLog("No valid job ID found in message")
+                                -- Debug: log the message content to see what's being received
+                                if data.d.content and data.d.content ~= "" then
+                                    addLog("Message content: " .. string.sub(data.d.content, 1, 50) .. "...")
+                                end
+                                if data.d.embeds and #data.d.embeds > 0 then
+                                    addLog("Message has " .. #data.d.embeds .. " embed(s)")
+                                end
                             end
                         end
                     end
                 elseif data.op == 11 then -- Heartbeat ACK
                     -- Heartbeat acknowledged
+                elseif data.op == 9 then -- Invalid session
+                    addLog("Invalid session, reconnecting...")
+                    wait(2)
+                    connectToDiscordGateway()
                 end
             end
         end)
@@ -769,5 +838,5 @@ addLog("Select channel and click START")
 
 print("Fractucul-Style AutoJoiner loaded!")
 print("This is a pure script solution - no external programs needed")
-print("Make sure to execute with your Discord token")
+print("Make sure to execute with your USER Discord token (not bot token)")
 print("Click START AUTOJOINER to begin monitoring Discord channels")
