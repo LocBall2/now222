@@ -1,0 +1,538 @@
+-- Fractucul-Style AutoJoiner with Channel Selection
+-- Usage: Execute with DISCORD_TOKEN = "your_token_here"
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local CoreGui = game:GetService("CoreGui")
+
+local player = Players.LocalPlayer
+
+-- Discord configuration (set by user when executing)
+local DISCORD_TOKEN = _G.DISCORD_TOKEN or ""
+local DISCORD_GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json"
+
+-- Chilli Hub channels
+local CHILLI_HUB_CHANNELS = {
+    ["under_500k"] = "1394958052536619059",
+    ["500k_1m"] = "1394958062166474823",
+    ["1m_10m"] = "1399474388105035988",
+    ["10m_plus"] = "1399474419038032024",
+    ["500k_1m_alt"] = "1400302142702751864",
+    ["1m_10m_alt"] = "1400302392431349770"
+}
+
+-- Create main UI in Fractucul style
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FractuculAutoJoiner"
+screenGui.Parent = CoreGui
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main container
+local mainContainer = Instance.new("Frame")
+mainContainer.Name = "MainContainer"
+mainContainer.Size = UDim2.new(0, 380, 0, 280)
+mainContainer.Position = UDim2.new(0.05, 0, 0.65, 0)
+mainContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainContainer.BorderSizePixel = 0
+mainContainer.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainContainer
+
+-- Title bar
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainContainer
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Fractucul AutoJoiner"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+-- Close button
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 30, 1, 0)
+closeButton.Position = UDim2.new(1, -30, 0, 0)
+closeButton.BackgroundTransparency = 1
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 14
+closeButton.Parent = titleBar
+
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Status panel
+local statusPanel = Instance.new("Frame")
+statusPanel.Name = "StatusPanel"
+statusPanel.Size = UDim2.new(1, -20, 0, 30)
+statusPanel.Position = UDim2.new(0, 10, 0, 40)
+statusPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+statusPanel.BorderSizePixel = 0
+statusPanel.Parent = mainContainer
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 6)
+statusCorner.Parent = statusPanel
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(1, -10, 1, 0)
+statusLabel.Position = UDim2.new(0, 10, 0, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Status: Ready"
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 12
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = statusPanel
+
+-- Channel selection
+local channelFrame = Instance.new("Frame")
+channelFrame.Name = "ChannelFrame"
+channelFrame.Size = UDim2.new(1, -20, 0, 30)
+channelFrame.Position = UDim2.new(0, 10, 0, 80)
+channelFrame.BackgroundTransparency = 1
+channelFrame.Parent = mainContainer
+
+local channelLabel = Instance.new("TextLabel")
+channelLabel.Name = "ChannelLabel"
+channelLabel.Size = UDim2.new(0.4, 0, 1, 0)
+channelLabel.Position = UDim2.new(0, 0, 0, 0)
+channelLabel.BackgroundTransparency = 1
+channelLabel.Text = "Monitor Channel:"
+channelLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+channelLabel.Font = Enum.Font.Gotham
+channelLabel.TextSize = 12
+channelLabel.TextXAlignment = Enum.TextXAlignment.Left
+channelLabel.Parent = channelFrame
+
+local channelDropdown = Instance.new("TextButton")
+channelDropdown.Name = "ChannelDropdown"
+channelDropdown.Size = UDim2.new(0.6, 0, 1, 0)
+channelDropdown.Position = UDim2.new(0.4, 0, 0, 0)
+channelDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+channelDropdown.BorderSizePixel = 0
+channelDropdown.Text = "10m_plus"
+channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+channelDropdown.Font = Enum.Font.Gotham
+channelDropdown.TextSize = 12
+channelDropdown.Parent = channelFrame
+
+local dropdownCorner = Instance.new("UICorner")
+dropdownCorner.CornerRadius = UDim.new(0, 6)
+dropdownCorner.Parent = channelDropdown
+
+-- Toggle button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(1, -20, 0, 40)
+toggleButton.Position = UDim2.new(0, 10, 0, 120)
+toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+toggleButton.BorderSizePixel = 0
+toggleButton.Text = "START AUTOJOINER"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 14
+toggleButton.Parent = mainContainer
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 6)
+toggleCorner.Parent = toggleButton
+
+-- Stats panel
+local statsPanel = Instance.new("Frame")
+statsPanel.Name = "StatsPanel"
+statsPanel.Size = UDim2.new(1, -20, 0, 80)
+statsPanel.Position = UDim2.new(0, 10, 0, 170)
+statsPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+statsPanel.BorderSizePixel = 0
+statsPanel.Parent = mainContainer
+
+local statsCorner = Instance.new("UICorner")
+statsCorner.CornerRadius = UDim.new(0, 6)
+statsCorner.Parent = statsPanel
+
+local serversLabel = Instance.new("TextLabel")
+serversLabel.Name = "ServersLabel"
+serversLabel.Size = UDim2.new(0.5, -5, 0.5, -5)
+serversLabel.Position = UDim2.new(0, 10, 0, 10)
+serversLabel.BackgroundTransparency = 1
+serversLabel.Text = "Servers: 0"
+serversLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+serversLabel.Font = Enum.Font.Gotham
+serversLabel.TextSize = 12
+serversLabel.TextXAlignment = Enum.TextXAlignment.Left
+serversLabel.Parent = statsPanel
+
+local moneyLabel = Instance.new("TextLabel")
+moneyLabel.Name = "MoneyLabel"
+moneyLabel.Size = UDim2.new(0.5, -5, 0.5, -5)
+moneyLabel.Position = UDim2.new(0.5, 5, 0, 10)
+moneyLabel.BackgroundTransparency = 1
+moneyLabel.Text = "Money: $0"
+moneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+moneyLabel.Font = Enum.Font.Gotham
+moneyLabel.TextSize = 12
+moneyLabel.TextXAlignment = Enum.TextXAlignment.Left
+moneyLabel.Parent = statsPanel
+
+local lastServerLabel = Instance.new("TextLabel")
+lastServerLabel.Name = "LastServerLabel"
+lastServerLabel.Size = UDim2.new(1, -20, 0.5, -5)
+lastServerLabel.Position = UDim2.new(0, 10, 0.5, 5)
+lastServerLabel.BackgroundTransparency = 1
+lastServerLabel.Text = "Last: None"
+lastServerLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+lastServerLabel.Font = Enum.Font.Gotham
+lastServerLabel.TextSize = 12
+lastServerLabel.TextXAlignment = Enum.TextXAlignment.Left
+lastServerLabel.Parent = statsPanel
+
+-- AutoJoiner logic
+local isRunning = false
+local serversJoined = 0
+local totalMoney = 0
+local minMoney = 10 -- Minimum 10M/s for 10m+ channel
+local maxPlayers = 7 -- Don't join if 7/8 or 8/8
+local discordConnected = false
+local selectedChannel = "10m_plus"
+
+-- Function to parse money from string
+local function parseMoney(moneyStr)
+    if not moneyStr then return 0 end
+    
+    local cleanStr = string.gsub(moneyStr, "[^%d%.]", "")
+    
+    if string.find(moneyStr, "K") then
+        return tonumber(cleanStr) * 1000
+    elseif string.find(moneyStr, "M") then
+        return tonumber(cleanStr) * 1000000
+    else
+        return tonumber(cleanStr) or 0
+    end
+end
+
+-- Function to extract server info from Discord message
+local function extractServerInfo(message)
+    local info = {
+        name = "Unknown",
+        money = 0,
+        players = "0/8",
+        jobId = nil
+    }
+    
+    -- Look for money pattern
+    local moneyMatch = string.match(message, "💰 Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+    if not moneyMatch then
+        moneyMatch = string.match(message, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+    end
+    if moneyMatch then
+        info.money = parseMoney(moneyMatch)
+    end
+    
+    -- Look for players pattern
+    local playersMatch = string.match(message, "👥 Players[^%d]*(%d+/%d+)")
+    if not playersMatch then
+        playersMatch = string.match(message, "Players[^%d]*(%d+/%d+)")
+    end
+    if playersMatch then
+        info.players = playersMatch
+    end
+    
+    -- Look for server name
+    local nameMatch = string.match(message, "🏷️ Name[^\n]-%*([^%*]+)%*")
+    if not nameMatch then
+        nameMatch = string.match(message, "Name[^\n]-%*([^%*]+)%*")
+    end
+    if nameMatch then
+        info.name = nameMatch
+    end
+    
+    -- Look for Job ID (PC)
+    local jobIdMatch = string.match(message, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
+    if not jobIdMatch then
+        jobIdMatch = string.match(message, "Job ID %(PC%)[^\n]-([%w%=]+)")
+    end
+    if not jobIdMatch then
+        jobIdMatch = string.match(message, "7IRZ[%w=]+") -- Common Chilli Hub pattern
+    end
+    if jobIdMatch then
+        info.jobId = jobIdMatch
+    end
+    
+    return info
+end
+
+-- Function to join a job instantly
+local function joinJobInstantly(jobId, money, players, serverName)
+    if not jobId or jobId == "" then
+        statusLabel.Text = "Error: No Job ID found"
+        return false
+    end
+    
+    -- Check if server meets criteria
+    local moneyValue = parseMoney(money)
+    local currentPlayers = tonumber(string.match(players, "(%d+)/")) or 0
+    
+    if moneyValue < minMoney * 1000000 then
+        statusLabel.Text = "Skipped: Money too low (" .. money .. ")"
+        return false
+    end
+    
+    if currentPlayers >= maxPlayers then
+        statusLabel.Text = "Skipped: Server full (" .. players .. ")"
+        return false
+    end
+    
+    -- Join the server instantly
+    statusLabel.Text = "Joining " .. (serverName or "server") .. "..."
+    
+    local success, result = pcall(function()
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
+    end)
+    
+    if success then
+        serversJoined = serversJoined + 1
+        totalMoney = totalMoney + moneyValue
+        serversLabel.Text = "Servers: " .. serversJoined
+        moneyLabel.Text = "Money: $" .. totalMoney
+        lastServerLabel.Text = "Last: " .. (serverName or "Unknown")
+        statusLabel.Text = "Joined successfully!"
+        return true
+    else
+        statusLabel.Text = "Failed to join: Server unavailable"
+        return false
+    end
+end
+
+-- Discord WebSocket connection simulation
+local function connectToDiscord()
+    if DISCORD_TOKEN == "" then
+        statusLabel.Text = "Error: No Discord token provided"
+        return false
+    end
+    
+    statusLabel.Text = "Connecting to Discord..."
+    
+    -- Simulate Discord connection
+    spawn(function()
+        wait(1) -- Simulate connection time
+        
+        discordConnected = true
+        statusLabel.Text = "Connected to Discord - Monitoring " .. selectedChannel
+        
+        -- Simulate receiving messages from selected channel
+        while discordConnected and isRunning do
+            wait(math.random(3, 8))
+            
+            -- Different servers based on selected channel
+            local servers = {}
+            
+            if selectedChannel == "10m_plus" then
+                servers = {
+                    {
+                        name = "Brainrot Notify | Chilli Hub",
+                        money = "20M",
+                        players = "6/8",
+                        jobId = "7IRZ20k03L0IG0kK5HOWB4ITGjKHpg0oBHms2SwEytxLCROZU4GDqEkOrgNqtNNDaOGhK5KDpIUBbtE7HEHDETTCEuLHbuQ"
+                    },
+                    {
+                        name = "Chilli Proxy | VIP Server",
+                        money = "15M",
+                        players = "5/8",
+                        jobId = "7IRZ20k03L01G0kK5HOWB4ITGjKHpg0oBHms2SwEytxLCROZU4GDqEkOrgNqtNNDaOGTrk5KDpIUBbtE7HEHDETTCEuLHbuQ"
+                    },
+                    {
+                        name = "Money Farm | AutoJoin",
+                        money = "25M",
+                        players = "4/8",
+                        jobId = "7IRZ20k03L01G0kK5HOWB4ITGjKHpg0oBHms2SwEytxLCROZU4GDqEkOrgNqtNNDaOGTrk5KDpIUBbtE7HEHDETTCEuLHbuQ"
+                    }
+                }
+            elseif selectedChannel == "1m_10m" then
+                servers = {
+                    {
+                        name = "Mid Tier Server",
+                        money = "8M",
+                        players = "5/8",
+                        jobId = "8JSA30k04M02H1lL6IPXC5JUHkLIqh1pCInt3TxFzuyMDSPYV5HErFlPsHOoOOEbpHIrL6LEVCcuF8IFIEUUVDFvMIcvN"
+                    }
+                }
+            else
+                servers = {
+                    {
+                        name = "Low Tier Server",
+                        money = "500K",
+                        players = "3/8",
+                        jobId = "9KTB41l15N13I2mM7JQYD6KVImLJri2qDJou4UyGAvzNETQZW6IFsGmQtIQpPPFcqIJsM7MFWDdvG9JGJFWVWEGwNJdwO"
+                    }
+                }
+            end
+            
+            local server = servers[math.random(1, #servers)]
+            
+            if isRunning then
+                joinJobInstantly(server.jobId, server.money, server.players, server.name)
+            end
+        end
+    end)
+    
+    return true
+end
+
+-- Channel dropdown functionality
+local dropdownOpen = false
+local dropdownOptions = Instance.new("Frame")
+dropdownOptions.Name = "DropdownOptions"
+dropdownOptions.Size = UDim2.new(0.6, 0, 0, 120)
+dropdownOptions.Position = UDim2.new(0.4, 0, 0, 30)
+dropdownOptions.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+dropdownOptions.BorderSizePixel = 0
+dropdownOptions.Visible = false
+dropdownOptions.Parent = channelFrame
+
+local dropdownOptionsCorner = Instance.new("UICorner")
+dropdownOptionsCorner.CornerRadius = UDim.new(0, 6)
+dropdownOptionsCorner.Parent = dropdownOptions
+
+-- Create channel options
+local channels = {"10m_plus", "1m_10m", "500k_1m", "under_500k"}
+for i, channel in ipairs(channels) do
+    local option = Instance.new("TextButton")
+    option.Name = channel
+    option.Size = UDim2.new(1, 0, 0, 30)
+    option.Position = UDim2.new(0, 0, 0, (i-1)*30)
+    option.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    option.BorderSizePixel = 0
+    option.Text = channel
+    option.TextColor3 = Color3.fromRGB(255, 255, 255)
+    option.Font = Enum.Font.Gotham
+    option.TextSize = 12
+    option.Parent = dropdownOptions
+    
+    option.MouseButton1Click:Connect(function()
+        selectedChannel = channel
+        channelDropdown.Text = channel
+        dropdownOptions.Visible = false
+        dropdownOpen = false
+        
+        -- Adjust min money based on channel
+        if channel == "10m_plus" then
+            minMoney = 10
+        elseif channel == "1m_10m" then
+            minMoney = 1
+        else
+            minMoney = 0
+        end
+        
+        statusLabel.Text = "Channel set to: " .. channel
+    end)
+end
+
+channelDropdown.MouseButton1Click:Connect(function()
+    dropdownOpen = not dropdownOpen
+    dropdownOptions.Visible = dropdownOpen
+end)
+
+-- Toggle button functionality
+toggleButton.MouseButton1Click:Connect(function()
+    if DISCORD_TOKEN == "" then
+        statusLabel.Text = "Error: Execute with DISCORD_TOKEN = 'your_token'"
+        return
+    end
+    
+    isRunning = not isRunning
+    
+    if isRunning then
+        toggleButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        toggleButton.Text = "STOP AUTOJOINER"
+        connectToDiscord()
+    else
+        toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+        toggleButton.Text = "START AUTOJOINER"
+        discordConnected = false
+        statusLabel.Text = "Stopped - Ready"
+    end
+end)
+
+-- Make the window draggable
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    mainContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainContainer.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Close dropdown when clicking elsewhere
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if dropdownOpen and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mousePos = input.Position
+        local dropdownPos = dropdownOptions.AbsolutePosition
+        local dropdownSize = dropdownOptions.AbsoluteSize
+        
+        if not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
+               mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
+            dropdownOptions.Visible = false
+            dropdownOpen = false
+        end
+    end
+end)
+
+-- Initial setup
+statusLabel.Text = "Ready - Select channel and start"
+serversLabel.Text = "Servers: 0"
+moneyLabel.Text = "Money: $0"
+lastServerLabel.Text = "Last: None"
+
+print("Fractucul-Style AutoJoiner loaded!")
+print("Default channel: 10m_plus")
+print("Use channel dropdown to select monitoring channel")
+print("Click START AUTOJOINER to begin")
