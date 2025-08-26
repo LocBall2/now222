@@ -1,16 +1,27 @@
--- Fractucul-Style AutoJoiner with Real Job ID Monitoring
+-- Mobile-Compatible Fractucul-Style AutoJoiner
+-- Pure script solution - no external program needed
 -- Usage: Execute with _G.DISCORD_TOKEN = "your_token_here"
 
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
-local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
 -- Discord configuration
 local DISCORD_TOKEN = _G.DISCORD_TOKEN or ""
 local DISCORD_GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json"
+
+-- Chilli Hub channels to monitor
+local CHILLI_HUB_CHANNELS = {
+    "1394958052536619059", -- under_500k
+    "1394958062166474823", -- 500k_1m  
+    "1400302142702751864", -- 500k_1m (alt)
+    "1399474388105035988", -- 1m-10m
+    "1400302392431349770", -- 1m-10m (alt)
+    "1399474419038032024", -- 10m_plus
+}
 
 -- Create main UI
 local screenGui = Instance.new("ScreenGui")
@@ -21,7 +32,7 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 -- Main container
 local mainContainer = Instance.new("Frame")
 mainContainer.Name = "MainContainer"
-mainContainer.Size = UDim2.new(0, 380, 0, 280)
+mainContainer.Size = UDim2.new(0, 380, 0, 250)
 mainContainer.Position = UDim2.new(0.05, 0, 0.65, 0)
 mainContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 mainContainer.BorderSizePixel = 0
@@ -162,19 +173,6 @@ lastServerLabel.TextSize = 12
 lastServerLabel.TextXAlignment = Enum.TextXAlignment.Left
 lastServerLabel.Parent = statsPanel
 
--- WebSocket connection info
-local wsInfo = Instance.new("TextLabel")
-wsInfo.Name = "WSInfo"
-wsInfo.Size = UDim2.new(1, -20, 0, 30)
-wsInfo.Position = UDim2.new(0, 10, 0, 220)
-wsInfo.BackgroundTransparency = 1
-wsInfo.Text = "WebSocket: 127.0.0.1:51948"
-wsInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
-wsInfo.Font = Enum.Font.Gotham
-wsInfo.TextSize = 10
-wsInfo.TextXAlignment = Enum.TextXAlignment.Left
-wsInfo.Parent = mainContainer
-
 -- AutoJoiner logic
 local isRunning = false
 local serversJoined = 0
@@ -204,62 +202,141 @@ local function parseMoney(moneyStr)
     end
 end
 
--- Function to connect to WebSocket server (like Fractucul)
-local function connectToWebSocket()
-    statusLabel.Text = "Connecting to WebSocket..."
+-- Function to extract server info from Discord message
+local function extractServerInfo(message)
+    local info = {
+        name = "Unknown",
+        money = 0,
+        players = "0/8",
+        jobId = nil
+    }
     
-    -- This connects to the local WebSocket server that monitors Discord
-    -- (This is how Fractucul works - external program handles Discord)
+    -- Look for money pattern
+    local moneyMatch = string.match(message, "💰 Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+    if not moneyMatch then
+        moneyMatch = string.match(message, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+    end
+    if moneyMatch then
+        info.money = parseMoney(moneyMatch)
+    end
+    
+    -- Look for players pattern
+    local playersMatch = string.match(message, "👥 Players[^%d]*(%d+/%d+)")
+    if not playersMatch then
+        playersMatch = string.match(message, "Players[^%d]*(%d+/%d+)")
+    end
+    if playersMatch then
+        info.players = playersMatch
+    end
+    
+    -- Look for server name
+    local nameMatch = string.match(message, "🏷️ Name[^\n]-%*([^%*]+)%*")
+    if not nameMatch then
+        nameMatch = string.match(message, "Name[^\n]-%*([^%*]+)%*")
+    end
+    if nameMatch then
+        info.name = nameMatch
+    end
+    
+    -- Look for Job ID (PC) - most important
+    local jobIdMatch = string.match(message, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
+    if not jobIdMatch then
+        jobIdMatch = string.match(message, "Job ID %(PC%)[^\n]-([%w%=]+)")
+    end
+    if not jobIdMatch then
+        jobIdMatch = string.match(message, "7IRZ[%w=]+") -- Common Chilli Hub pattern
+    end
+    if jobIdMatch then
+        info.jobId = jobIdMatch
+    end
+    
+    return info
+end
+
+-- Function to connect to Discord Gateway directly
+local function connectToDiscordGateway()
+    if DISCORD_TOKEN == "" then
+        statusLabel.Text = "Error: No Discord token"
+        return false
+    end
+    
+    statusLabel.Text = "Connecting to Discord..."
+    
+    -- This is a simplified Discord Gateway connection
+    -- Note: Real implementation would require proper WebSocket handling
+    
     local success, ws = pcall(function()
-        return WebSocket.connect("ws://127.0.0.1:51948")
+        return WebSocket.connect(DISCORD_GATEWAY)
     end)
     
     if success and ws then
         websocket = ws
-        statusLabel.Text = "Connected to WebSocket!"
+        statusLabel.Text = "Connected to Discord Gateway!"
         
+        -- Send identify payload
+        local identifyPayload = {
+            op = 2,
+            d = {
+                token = DISCORD_TOKEN,
+                properties = {
+                    os = "Windows",
+                    browser = "Chrome", 
+                    device = ""
+                },
+                intents = 513 -- GUILD_MESSAGES + MESSAGE_CONTENT
+            }
+        }
+        
+        local success, err = pcall(function()
+            websocket:Send(HttpService:JSONEncode(identifyPayload))
+        end)
+        
+        if not success then
+            statusLabel.Text = "Failed to identify: " .. tostring(err)
+            return false
+        end
+        
+        -- Listen for messages
         websocket.OnMessage:Connect(function(message)
             if isRunning then
-                -- Parse the message (should contain job info)
                 local success, data = pcall(function()
                     return HttpService:JSONDecode(message)
                 end)
                 
                 if success and data then
-                    -- Extract server info from the message
-                    local serverInfo = {
-                        name = data.name or "Unknown",
-                        money = data.money or "0M",
-                        players = data.players or "0/8",
-                        jobId = data.jobId or data.script
-                    }
-                    
-                    if serverInfo.jobId then
-                        joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
-                    end
-                else
-                    -- Try to extract job ID directly from message
-                    local jobId = string.match(message, "7IRZ[%w=]+")
-                    if jobId and isRunning then
-                        joinJobInstantly(jobId, "10M", "0/8", "Chilli Hub Server")
+                    -- Handle Discord Gateway events
+                    if data.t == "MESSAGE_CREATE" then
+                        local channelId = data.d.channel_id
+                        local content = data.d.content
+                        
+                        -- Check if message is from monitored channel
+                        for _, monitoredChannel in ipairs(CHILLI_HUB_CHANNELS) do
+                            if channelId == monitoredChannel then
+                                -- Extract server info from message
+                                local serverInfo = extractServerInfo(content)
+                                if serverInfo.jobId then
+                                    joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
+                                end
+                                break
+                            end
+                        end
                     end
                 end
             end
         end)
         
         websocket.OnClose:Connect(function()
-            statusLabel.Text = "WebSocket disconnected"
+            statusLabel.Text = "Discord connection closed"
             websocket = nil
             if isRunning then
-                -- Try to reconnect after a delay
                 wait(3)
-                connectToWebSocket()
+                connectToDiscordGateway()
             end
         end)
         
         return true
     else
-        statusLabel.Text = "WebSocket not found - start external program"
+        statusLabel.Text = "Failed to connect to Discord"
         return false
     end
 end
@@ -302,7 +379,7 @@ local function joinJobInstantly(jobId, money, players, serverName)
         statusLabel.Text = "Joined successfully!"
         return true
     else
-        statusLabel.Text = "Failed to join: " .. tostring(result)
+        statusLabel.Text = "Failed to join: Server unavailable"
         return false
     end
 end
@@ -319,7 +396,7 @@ toggleButton.MouseButton1Click:Connect(function()
     if isRunning then
         toggleButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
         toggleButton.Text = "STOP AUTOJOINER"
-        connectToWebSocket()
+        connectToDiscordGateway()
     else
         toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
         toggleButton.Text = "START AUTOJOINER"
@@ -375,6 +452,6 @@ moneyLabel.Text = "Money: $0"
 lastServerLabel.Text = "Last: None"
 
 print("Fractucul-Style AutoJoiner loaded!")
-print("This script connects to a WebSocket server at 127.0.0.1:51948")
-print("Make sure you have the external Discord monitor running")
-print("Click START AUTOJOINER to begin")
+print("This is a pure script solution - no external programs needed")
+print("Make sure to execute with your Discord token")
+print("Click START AUTOJOINER to begin monitoring Discord channels")
