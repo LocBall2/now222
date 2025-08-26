@@ -499,7 +499,7 @@ end
 
 -- Function to join a job instantly
 local function joinJobInstantly(jobId, money, players, serverName)
-    if not jobId or jobId == "" or #jobId < 30 then
+    if not jobId or jobId == "" or #jobId < 10 then
         statusLabel.Text = "Invalid Job ID"
         addLog("Invalid Job ID: " .. tostring(jobId))
         return false
@@ -575,10 +575,13 @@ local function connectToDiscordGateway()
     addLog("Connecting to Discord gateway...")
     
     local success, ws = pcall(function()
+        -- Try different WebSocket connection methods
         if syn and syn.websocket then
             return syn.websocket.connect(DISCORD_GATEWAY)
-        else
+        elseif WebSocket then
             return WebSocket.connect(DISCORD_GATEWAY)
+        else
+            error("No WebSocket implementation found")
         end
     end)
     
