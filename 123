@@ -445,6 +445,60 @@ local function extractServerInfo(message)
     return info
 end
 
+-- Function to join a job instantly
+local function joinJobInstantly(jobId, money, players, serverName)
+    if not jobId or jobId == "" or #jobId < 30 then
+        statusLabel.Text = "Invalid Job ID"
+        addLog("Invalid Job ID: " .. tostring(jobId))
+        return false
+    end
+    
+    -- Get current filter values
+    local minMoneyValue = tonumber(minMoneyBox.Text) or 10
+    local maxPlayersValue = tonumber(maxPlayersBox.Text) or 6
+    
+    -- Check if server meets criteria
+    local moneyValue = parseMoney(money)
+    local currentPlayers = tonumber(string.match(players, "(%d+)/")) or 0
+    local maxServerPlayers = tonumber(string.match(players, "/(%d+)")) or 8
+    
+    if moneyValue < minMoneyValue * 1000000 then
+        statusLabel.Text = "Skipped: Money too low (" .. (moneyValue/1000000) .. "M)"
+        addLog("Skipped: Money too low (" .. (moneyValue/1000000) .. "M)")
+        return false
+    end
+    
+    if currentPlayers >= maxPlayersValue then
+        statusLabel.Text = "Skipped: Server full (" .. players .. ")"
+        addLog("Skipped: Server full (" .. players .. ")")
+        return false
+    end
+    
+    -- Join the server instantly
+    statusLabel.Text = "Joining " .. (serverName or "server") .. "..."
+    addLog("Joining " .. (serverName or "server") .. " (" .. players .. ")")
+    lastServerLabel.Text = "Last: " .. (serverName or "Unknown")
+    
+    -- Use Roblox's TeleportService to join the server
+    local success, result = pcall(function()
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
+    end)
+    
+    if success then
+        serversJoined = serversJoined + 1
+        totalMoney = totalMoney + moneyValue
+        serversLabel.Text = "Servers: " .. serversJoined
+        moneyLabel.Text = "Money: $" .. string.format("%.2fM", totalMoney/1000000)
+        statusLabel.Text = "Joined successfully!"
+        addLog("Successfully joined server!")
+        return true
+    else
+        statusLabel.Text = "Failed to join: Server unavailable"
+        addLog("Failed to join: " .. tostring(result))
+        return false
+    end
+end
+
 -- Function to connect to Discord Gateway directly
 local function connectToDiscordGateway()
     if DISCORD_TOKEN == "" then
@@ -457,8 +511,14 @@ local function connectToDiscordGateway()
     addLog("Connecting to Discord gateway...")
     
     local success, ws = pcall(function()
-        return WebSocket.connect(DISCORD_GATEWAY)
+        return syn.websocket.connect(DISCORD_GATEWAY)
     end)
+    
+    if not success then
+        success, ws = pcall(function()
+            return WebSocket.connect(DISCORD_GATEWAY)
+        end)
+    end
     
     if success and ws then
         websocket = ws
@@ -537,60 +597,6 @@ local function connectToDiscordGateway()
     else
         statusLabel.Text = "Failed to connect to Discord"
         addLog("Failed to connect to Discord gateway")
-        return false
-    end
-end
-
--- Function to join a job instantly
-local function joinJobInstantly(jobId, money, players, serverName)
-    if not jobId or jobId == "" or #jobId < 30 then
-        statusLabel.Text = "Invalid Job ID"
-        addLog("Invalid Job ID: " .. tostring(jobId))
-        return false
-    end
-    
-    -- Get current filter values
-    local minMoneyValue = tonumber(minMoneyBox.Text) or 10
-    local maxPlayersValue = tonumber(maxPlayersBox.Text) or 6
-    
-    -- Check if server meets criteria
-    local moneyValue = parseMoney(money)
-    local currentPlayers = tonumber(string.match(players, "(%d+)/")) or 0
-    local maxServerPlayers = tonumber(string.match(players, "/(%d+)")) or 8
-    
-    if moneyValue < minMoneyValue * 1000000 then
-        statusLabel.Text = "Skipped: Money too low (" .. (moneyValue/1000000) .. "M)"
-        addLog("Skipped: Money too low (" .. (moneyValue/1000000) .. "M)")
-        return false
-    end
-    
-    if currentPlayers >= maxPlayersValue then
-        statusLabel.Text = "Skipped: Server full (" .. players .. ")"
-        addLog("Skipped: Server full (" .. players .. ")")
-        return false
-    end
-    
-    -- Join the server instantly
-    statusLabel.Text = "Joining " .. (serverName or "server") .. "..."
-    addLog("Joining " .. (serverName or "server") .. " (" .. players .. ")")
-    lastServerLabel.Text = "Last: " .. (serverName or "Unknown")
-    
-    -- Use Roblox's TeleportService to join the server
-    local success, result = pcall(function()
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
-    end)
-    
-    if success then
-        serversJoined = serversJoined + 1
-        totalMoney = totalMoney + moneyValue
-        serversLabel.Text = "Servers: " .. serversJoined
-        moneyLabel.Text = "Money: $" .. string.format("%.2fM", totalMoney/1000000)
-        statusLabel.Text = "Joined successfully!"
-        addLog("Successfully joined server!")
-        return true
-    else
-        statusLabel.Text = "Failed to join: Server unavailable"
-        addLog("Failed to join: " .. tostring(result))
         return false
     end
 end
