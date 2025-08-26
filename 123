@@ -1,282 +1,858 @@
---[[
-=========================================================================================================================
---                                                                                                                     --
---                       LOC'S AUTOJOINER (THE ONE THAT FUCKING WORKS - FRACTUCUL STYLE)                               --
---                                                                                                                     --
--- Description:                                                                                                        --
--- This is the definitive script. It is a PURE LUA SELF-BOT. It injects a professional UI directly into the Chilli     --
--- Hub interface, using the exact structure from your spy log. It connects directly to Discord and uses Chilli Hub to--
--- join servers. This is the final version. It works.                                                                  --
---                                                                                                                     --
-=========================================================================================================================
-]]
+-- Mobile-Compatible Fractucul-Style AutoJoiner
+-- Fixed for user tokens and Discord embed parsing
 
--- This is the kill switch. Re-executing the script will turn it off.
-if getgenv().LOC_AUTOJOINER_IS_LOADED then
-    getgenv().LOC_AUTOJOINER_IS_RUNNING = false
-    if getgenv().LOC_AUTOJOINER_CONNECTION then
-        pcall(function() getgenv().LOC_AUTOJOINER_CONNECTION:Close() end)
-    end
-    if getgenv().LOC_AUTOJOINER_UI_ELEMENTS then
-        for _, el in ipairs(getgenv().LOC_AUTOJOINER_UI_ELEMENTS) do pcall(function() el:Destroy() end) end
-    end
-    print("[AutoJoiner]: Script terminated.")
-    getgenv().LOC_AUTOJOINER_IS_LOADED = nil
-    return
-end
-getgenv().LOC_AUTOJOINER_IS_LOADED = true
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 
---=====================================================================================================================--
---                                               [ CONFIGURATION ]                                                     --
---=====================================================================================================================--
+local player = Players.LocalPlayer
 
-local DISCORD_TOKEN = getgenv().DISCORD_TOKEN or ""
+-- Discord configuration - MUST use USER token (not bot token)
+local DISCORD_TOKEN = _G.DISCORD_TOKEN or ""
+local DISCORD_GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json"
 
---=====================================================================================================================--
---                                        [ EMBEDDED LIBRARIES ]                                                       --
---=====================================================================================================================--
-
-local JSON;do local a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z;a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z=string.byte,string.char,string.gsub,string.match,string.sub,tonumber,tostring,type,next,error,pairs,ipairs,pcall,select,setmetatable,unpack or table.unpack,{},{},"\\\"/bfnrt",{},"0123456789.e+-",function(a)return a:find('^%s*$')end,function(a,b)local c="Syntax error on line "..a..": "..b;return j(c)end,function(a,c,d)local e=b(a);if(e>=48 and e<=57)or e==45 then local b,d,f,g,i,j,k=p(c,d)return b,d,f,g,i,j,k end;return w(a,"Invalid number on line "..c)},function(a,c)local d=b(a);return d>=48 and d<=57 end,function(a,c,d)local e,f,g,i,j,k=r(c,d);if not e then return w(a,"Unfinished string on line "..c)end;if not j then return w(a,"Invalid escape sequence on line "..c)end;return e,j end,function(a,c,d)local e,f=s(c,d);if not e then return w(a,"Unfinished array on line "..c)end;return e,f end,function(a,c,d)local e,f=t(c,d);if not e then return w(a,"Unfinished object on line "..c)end;return e,f end;local function A(a,c)return...end;function r(a,c)local d,e,f,g,h,i,j,k,l="",c,{},{},{},false,false,false,"";while true do if g then d=d..l;l="";g=false elseif f then if A("bfnrt/\\\"",l)then d=d..i[l];f=false else return nil,nil,"Invalid escape sequence on line "..e end elseif l=="\""then return d,k else d=d..l end;k=k+1;l=a:sub(k,k);if l==""then return end;if l=="\\"then f=true elseif l=="\""then if not f then h=true end end end;B={["true"]=true,["false"]=false,["null"]=l};function u(a,c)while true do local d=a:sub(c,c);if d==""or not z(d)then break end;c=c+1 end;return c end;function q(a,c)local d,e=a:sub(c,c),B[a:sub(c,c+3)]or B[a:sub(c,c+4)];if e~=nil then return e,c+(e==nil and 4 or(e and 5 or 4))end;if d=="\""then return s(a,c+1)end;if d=="["then return v(a,c+1)end;if d=="{"then return w(a,c+1)end;if d=="-"or(d:byte()>=48 and d:byte()<=57))then return y(a,c)end end;function p(a,c)local d,e,f,g,h,i,j,k,l=c-1,false,false,false,false,0,0,0,"";while true do local m=a:sub(k+1,k+1);if m==""or not A("1234567890eE.-+",m)then break end;l=l..m;k=k+1 end;return l,c+k end;JSON={decode=function(a)if not a or d(a)~="string"then return nil,"Invalid JSON"end;local b,c=q(u(a,1));if b==nil then return nil,c or"Can't parse JSON"end;return b end,encode=function(a)local b,c,d,e,f,g,h,i,k,l;b,c,d,e,f,g,h,i,k,l={},{},{},{},string.gsub,string.format,string.byte,string.char,tonumber,tostring;c[92]="\\";c[34]="\"";c[8]="b";c[12]="f";c[10]="n";c[13]="r";c[9]="t";function d.string(a)return'"'..f(a,".",function(a)local b=i(a);if b then return"\\u00"..k("%02x",b)end;return"\\"..(c[b]or a)end)..'"'end;function d.number(a)return a end;function d.boolean(a)return a and"true"or"false"end;function d.table(a)local c,f,g,i={},0,{},b;for h in pairs(a)do i=true;break end;if i then for h in pairs(a)do if"number"==type(h)then f=f+1;c[f]=h end end;table.sort(c);if#c==f then for h=1,f do if c[h]~=h then i=false;break end end else i=false end end;if i then for h=1,f do g[h]=e[type(a[h])](a[h])end;return"["..table.concat(g,",").."]"end;for h,j in pairs(a)do g[#g+1]=e.string(h)..":"..e[type(j)](j)end;return"{"..table.concat(g,",").."}"end;e['nil']=function()return"null"end;return e[type(a)](a)end};end
-local WebSocket; do local _={_G=getfenv(),select=select,type=type,error=error,pcall=pcall,setmetatable=setmetatable,tostring=tostring,string={sub=string.sub,len=string.len,byte=string.byte,char=string.char,format=string.format,match=string.match,gmatch=string.gmatch,gsub=string.gsub,rep=string.rep,reverse=string.reverse},table={concat=table.concat,insert=table.insert},math={floor=math.floor,pow=math.pow,random=math.random},bit32={bxor=bit32.bxor,band=bit32.band,lshift=bit32.lshift,rshift=bit32.rshift},coroutine={create=coroutine.create,resume=coroutine.resume}};local a={};function a.btoa(b)local c,d,e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=","",_.string.len(b);for f=1,e,3 do local g,h,i=_.string.byte(b,f,f),_.string.byte(b,f+1,f+1),_.string.byte(b,f+2,f+2);g=g or 0;h=h or 0;i=i or 0;local j,k,l,m=_.bit32.rshift(g,2),_.bit32.lshift(_.bit32.band(g,3),4)+_.bit32.rshift(h,4),_.bit32.lshift(_.bit32.band(h,15),2)+_.bit32.rshift(i,6),_.bit32.band(i,63);d=d..c:sub(j+1,j+1)..c:sub(k+1,k+1)..c:sub(l+1,l+1)..c:sub(m+1,m+1)end;local g=e%3;if g==1 then d=d:sub(1,-3).."=="elseif g==2 then d=d:sub(1,-2).."="end;return d end;local b={};function b:New()local a={};_.setmetatable(a,b);a.events={};return a end;function b:On(a,c)self.events[a]=self.events[a]or{};_.table.insert(self.events[a],c)end;function b:Emit(a,...)local c=self.events[a];if c then for d,e in ipairs(c)do _.pcall(e,...)end end end;local c=b:New()_.setmetatable(c,{__index=b});function c:New(d)local e=b:New()_.setmetatable(e,c);e.secure=_.string.match(d,"^wss")~=nil;e.host,e.port=_.string.match(d,"^ws-://([^:/]+):?([0-9]*)");e.port=e.port and tonumber(e.port)or(e.secure and 443 or 80);e.path=_.string.match(d,"[^:/]+(.*)$")or"/";e.headers={};e.key=a.btoa(_.table.concat({_.string.char(_.math.random(0,255))for f=1,16}));return e end;function c:Connect()local b,d=self,c;if self.socket then return end;local e,g;if self.secure then local h=game:GetService("HttpService");e,g=_.pcall(function()return require(game.CoreGui.RobloxGui.Modules.Socket).secure_connect(self.host,self.port)end)else e,g=_.pcall(function()return require(game.CoreGui.RobloxGui.Modules.Socket).connect(self.host,self.port)end)end;if not e or not g then self:Emit("error","Failed to connect: ".._.tostring(g));return end;self.socket=g;local h={};_.table.insert(h,_.string.format("GET %s HTTP/1.1",self.path));_.table.insert(h,_.string.format("Host: %s",self.host));_.table.insert(h,"Upgrade: websocket");_.table.insert(h,"Connection: Upgrade");_.table.insert(h,"Sec-WebSocket-Key: "..self.key);_.table.insert(h,"Sec-WebSocket-Version: 13");for i,j in pairs(self.headers)do _.table.insert(h,i..": "..j)end;_.table.insert(h,"");local i,j=self.socket:send(_.table.concat(h,"\r\n").."\r\n");if not i then self:Emit("error","Failed to send upgrade request: "..j);return end;local k,l=self.socket:receive(4096);if not k then self:Emit("error","Failed to receive upgrade response: "..l);return end;self.socket:settimeout(0);self:Emit("open");self.thread=_.coroutine.create(function()d.Receiver(self)end);_.coroutine.resume(self.thread)end;function c:Send(a,b)local c=self.socket:send(self:EncodeFrame(a,1))end;function c:Close()self.socket:close()end;function c:EncodeFrame(a,b)local c=_.string.len(a);local d;if c<=125 then d=_.string.char(128+b,c)else d=_.string.char(128+b,126,_.bit32.rshift(c,8),_.bit32.band(c,255))end;return d..a end;function c.Receiver(a)local b,c=a,d;while a.socket and not a.socket:is_closed()do local d,e=a.socket:receive(2);if not d or d==""then break end;if _.string.len(d)<2 then d=d..a.socket:receive(1)end;local f=_.string.byte(d,1);local g=_.string.byte(d,2);local h=_.bit32.band(f,15);local i=_.bit32.band(g,127);local j;if i<=125 then j=i elseif i==126 then local k,l=a.socket:receive(2);j=_.bit32.lshift(_.string.byte(k,1),8)+_.string.byte(k,2)else local k,l=a.socket:receive(8);j=0;for m=1,8 do j=j+_.bit32.lshift(_.string.byte(k,m),8*(8-m))end end;local k,l=a.socket:receive(j);if h==8 then a.socket:close()break elseif h==1 then a:Emit("message",k)elseif h==9 then a:Send(k,10)end end;a:Emit("close")end;WebSocket=c end
-
---=====================================================================================================================--
---                                                [ SCRIPT CORE ]                                                      --
---=====================================================================================================================--
-
-local STATE = { IsActive = false, WebSocketClient = nil, HeartbeatThread = nil, LastSequence = nil, MoneyFilter = 10, ChannelFilter = "10m_plus" }
-local UI_HANDLES = {}
-
-local ChannelPresets = {
-    ["All Channels"] = { "1394958052536619059", "1394958062166474823", "1400302142702751864", "1399474388105035988", "1400302392431349770", "1399474419038032024" },
-    ["10m+"] = { "1399474419038032024" },
-    ["1m - 10m"] = { "1399474388105035988", "1400302392431349770" },
-    ["Under 1m"] = { "1394958052536619059", "1394958062166474823", "1400302142702751864" }
+-- Chilli Hub channels to monitor
+local CHILLI_HUB_CHANNELS = {
+    ["under_500k"] = "1394958052536619059",
+    ["500k_1m"] = "1394958062166474823", 
+    ["500k_1m_alt"] = "1400302142702751864",
+    ["1m_10m"] = "1399474388105035988",
+    ["1m_10m_alt"] = "1400302392431349770",
+    ["10m_plus"] = "1399474419038032024",
 }
 
-local function prints(str) print("[AutoJoiner Client]: " .. tostring(str)) end
+-- Create main UI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FractuculAutoJoiner"
+screenGui.Parent = CoreGui
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local function parseMoney(value)
-    if not value then return 0 end
-    value = value:gsub(",", "")
-    local num = tonumber(value:match("([%d,.]+)") or 0)
-    if value:find("K") then return num / 1000
-    elseif value:find("M") then return num end
-    return num
+-- Main container
+local mainContainer = Instance.new("Frame")
+mainContainer.Name = "MainContainer"
+mainContainer.Size = UDim2.new(0, 400, 0, 450)
+mainContainer.Position = UDim2.new(0.05, 0, 0.3, 0)
+mainContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainContainer.BorderSizePixel = 0
+mainContainer.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainContainer
+
+-- Title bar
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainContainer
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Fractucul AutoJoiner"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+-- Close button
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 30, 1, 0)
+closeButton.Position = UDim2.new(1, -30, 0, 0)
+closeButton.BackgroundTransparency = 1
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 14
+closeButton.Parent = titleBar
+
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Status panel
+local statusPanel = Instance.new("Frame")
+statusPanel.Name = "StatusPanel"
+statusPanel.Size = UDim2.new(1, -20, 0, 30)
+statusPanel.Position = UDim2.new(0, 10, 0, 40)
+statusPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+statusPanel.BorderSizePixel = 0
+statusPanel.Parent = mainContainer
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 6)
+statusCorner.Parent = statusPanel
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(1, -10, 1, 0)
+statusLabel.Position = UDim2.new(0, 10, 0, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Status: Ready"
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 12
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = statusPanel
+
+-- Server filter section
+local filterPanel = Instance.new("Frame")
+filterPanel.Name = "FilterPanel"
+filterPanel.Size = UDim2.new(1, -20, 0, 120)
+filterPanel.Position = UDim2.new(0, 10, 0, 80)
+filterPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+filterPanel.BorderSizePixel = 0
+filterPanel.Parent = mainContainer
+
+local filterCorner = Instance.new("UICorner")
+filterCorner.CornerRadius = UDim.new(0, 6)
+filterCorner.Parent = filterPanel
+
+local filterTitle = Instance.new("TextLabel")
+filterTitle.Name = "FilterTitle"
+filterTitle.Size = UDim2.new(1, -10, 0, 20)
+filterTitle.Position = UDim2.new(0, 10, 0, 5)
+filterTitle.BackgroundTransparency = 1
+filterTitle.Text = "Server Filters:"
+filterTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+filterTitle.Font = Enum.Font.GothamBold
+filterTitle.TextSize = 12
+filterTitle.TextXAlignment = Enum.TextXAlignment.Left
+filterTitle.Parent = filterPanel
+
+-- Minimum money input
+local minMoneyContainer = Instance.new("Frame")
+minMoneyContainer.Name = "MinMoneyContainer"
+minMoneyContainer.Size = UDim2.new(1, -20, 0, 25)
+minMoneyContainer.Position = UDim2.new(0, 10, 0, 30)
+minMoneyContainer.BackgroundTransparency = 1
+minMoneyContainer.Parent = filterPanel
+
+local minMoneyLabel = Instance.new("TextLabel")
+minMoneyLabel.Name = "MinMoneyLabel"
+minMoneyLabel.Size = UDim2.new(0.5, -5, 1, 0)
+minMoneyLabel.Position = UDim2.new(0, 0, 0, 0)
+minMoneyLabel.BackgroundTransparency = 1
+minMoneyLabel.Text = "Min Money (M):"
+minMoneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+minMoneyLabel.Font = Enum.Font.Gotham
+minMoneyLabel.TextSize = 12
+minMoneyLabel.TextXAlignment = Enum.TextXAlignment.Left
+minMoneyLabel.Parent = minMoneyContainer
+
+local minMoneyBox = Instance.new("TextBox")
+minMoneyBox.Name = "MinMoneyBox"
+minMoneyBox.Size = UDim2.new(0.5, -5, 1, 0)
+minMoneyBox.Position = UDim2.new(0.5, 5, 0, 0)
+minMoneyBox.BackgroundColor极3 = Color3.fromRGB(40, 40, 45)
+minMoneyBox.BorderSizePixel = 0
+minMoneyBox.Text = "10"
+minMoneyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+minMoneyBox.Font = Enum.Font.Gotham
+minMoney极.TextSize = 12
+minMoneyBox.Parent = minMoneyContainer
+
+local minMoneyCorner = Instance.new("UICorner")
+minMoneyCorner.CornerRadius = UDim.new(0, 4)
+minMoneyCorner.Parent = minMoneyBox
+
+-- Max players input
+local maxPlayersContainer = Instance.new("Frame")
+maxPlayersContainer.Name = "MaxPlayersContainer"
+maxPlayersContainer.Size = UDim2.new(1, -20, 0, 25)
+maxPlayersContainer.Position = UDim2.new(0, 10, 0, 60)
+maxPlayersContainer.BackgroundTransparency = 1
+maxPlayers极ainer.Parent = filterPanel
+
+local maxPlayersLabel = Instance.new("TextLabel")
+maxPlayersLabel.Name = "MaxPlayersLabel"
+maxPlayersLabel.Size = UDim2.new(0.5, -5, 1, 0)
+maxPlayersLabel.Position = UDim2.new(0, 0, 0, 0)
+maxPlayersLabel.BackgroundTransparency = 1
+maxPlayersLabel.Text = "Max Players:"
+maxPlayersLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+maxPlayersLabel.Font = Enum.Font.Gotham
+maxPlayersLabel.TextSize = 12
+maxPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
+maxPlayersLabel.Parent = maxPlayersContainer
+
+local maxPlayersBox = Instance.new("TextBox")
+maxPlayersBox.Name = "MaxPlayersBox"
+maxPlayersBox.Size = UDim2.new(0.5, -5, 1, 0)
+maxPlayersBox.Position = UDim2.new(0.5, 5, 0, 0)
+maxPlayersBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+maxPlayersBox.BorderSizePixel = 0
+maxPlayersBox.Text = "6"
+maxPlayersBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+maxPlayersBox.Font = Enum.Font.Gotham
+maxPlayersBox.TextSize = 12
+maxPlayersBox.Parent = maxPlayersContainer
+
+local maxPlayersCorner = Instance.new("UICorner")
+maxPlayersCorner.CornerRadius = UDim.new(0, 4)
+maxPlayersCorner.Parent = maxPlayersBox
+
+-- Channel selection
+local channelContainer = Instance.new("Frame")
+channelContainer.Name = "ChannelContainer"
+channelContainer.Size = UDim2.new(1, -20, 0, 25)
+channelContainer.Position = UDim2.new(0, 10, 0, 90)
+channelContainer.BackgroundTransparency = 1
+channelContainer.Parent = filterPanel
+
+local channelLabel = Instance.new("TextLabel")
+channelLabel.Name = "ChannelLabel"
+channelLabel.Size = UDim2.new(0.5, -5, 1, 极)
+channelLabel.Position = UDim2.new(0, 0, 0, 0)
+channelLabel.BackgroundTransparency = 1
+channelLabel.Text = "Channel:"
+channelLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+channelLabel.Font = Enum.Font.Gotham
+channelLabel.TextSize = 12
+channelLabel.TextXAlignment = Enum.TextXAlignment.Left
+channelLabel.Parent = channelContainer
+
+local channelDropdown = Instance.new("TextButton")
+channelDropdown.Name = "ChannelDropdown"
+channelDropdown.Size = UDim2.new(0.5, -5, 1, 0)
+channelDropdown.Position = UDim2.new(0.5, 5, 0, 0)
+channelDropdown.BackgroundColor3 = Color3.from极B(40, 40, 45)
+channelDropdown.BorderSizePixel = 0
+channelDropdown.Text = "10m_plus"
+channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+channelDropdown.Font = Enum.Font.Gotham
+channelDropdown.TextSize = 12
+channelDropdown.Parent = channelContainer
+
+local channelCorner = Instance.new("UICorner")
+channelCorner.CornerRadius = UDim.new(0, 4)
+channelCorner.Parent = channelDropdown
+
+-- Toggle button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(1, -20, 0, 40)
+toggleButton.Position = UDim2.new(0, 10, 0, 210)
+toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+toggleButton.BorderSizePixel = 0
+toggleButton.Text = "START AUTOJOINER"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 14
+toggleButton.Parent = mainContainer
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 6)
+toggleCorner.Parent = toggleButton
+
+-- Stats panel
+local statsPanel = Instance.new("Frame")
+statsPanel.Name = "StatsPanel"
+statsPanel.Size = UDim2.new(1, -20, 0, 80)
+statsPanel.Position = UDim2.new(0, 10, 0, 260)
+statsPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+statsPanel.BorderSizePixel = 0
+statsPanel.Parent = mainContainer
+
+local statsCorner = Instance.new("UICorner")
+stats极rner.CornerRadius = UDim.new(0, 6)
+statsCorner.Parent = statsPanel
+
+local serversLabel = Instance.new("TextLabel")
+serversLabel.Name = "ServersLabel"
+serversLabel.Size = UDim2.new(0.5, -5, 0.5, -5)
+serversLabel.Position = UDim2.new(0, 10, 0, 10)
+serversLabel.BackgroundTransparency = 1
+serversLabel.Text = "Servers: 0"
+serversLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+serversLabel.Font = Enum.Font.Gotham
+serversLabel.TextSize = 12
+serversLabel.TextXAlignment = Enum.TextXAlignment.Left
+serversLabel.Parent = statsPanel
+
+local moneyLabel = Instance.new("TextLabel")
+moneyLabel.Name = "MoneyLabel"
+moneyLabel.Size = UDim2.new(0.5, -5, 0.5, -5)
+moneyLabel.Position = UDim2.new(0.5, 5, 0, 10)
+moneyLabel.BackgroundTransparency = 极
+moneyLabel.Text = "Money: $0"
+moneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+moneyLabel.Font = Enum.Font.Gotham
+moneyLabel.TextSize = 12
+moneyLabel.TextXAlignment = Enum.TextXAlignment.Left
+moneyLabel.Parent = statsPanel
+
+local lastServerLabel = Instance.new("TextLabel")
+lastServerLabel.Name = "LastServerLabel"
+lastServerLabel.Size = UDim2.new(1, -20, 0.5, -5)
+lastServerLabel.Position = UDim2.new(0, 10, 0.5, 5)
+lastServerLabel.BackgroundTransparency = 1
+lastServerLabel.Text = "Last: None"
+lastServerLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+lastServerLabel.Font = Enum.Font.Gotham
+lastServerLabel.TextSize = 12
+lastServerLabel.TextXAlignment = Enum.TextXAlignment.Left
+lastServerLabel.Parent = statsPanel
+
+-- Log panel
+local logPanel = Instance.new("ScrollingFrame")
+logPanel.Name = "LogPanel"
+logPanel.Size = UDim2.new(1, -20, 0, 80)
+logPanel.Position = UDim2.new(0, 10, 0, 350)
+logPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+logPanel.BorderSizePixel = 0
+logPanel.ScrollBarThickness = 5
+logPanel.CanvasSize = UDim2.new(0, 0, 2, 0)
+logPanel.Parent = mainContainer
+
+local logCorner = Instance.new("UICorner")
+logCorner.CornerRadius = UDim.new(0, 6)
+logCorner.Parent = logPanel
+
+local logLayout = Instance.new("UIListLayout")
+logLayout.Parent = logPanel
+logLayout.SortOrder = Enum.SortOrder.LayoutOrder
+logLayout.Padding = UDim.new(0, 2)
+
+-- AutoJoiner logic
+local isRunning = false
+local serversJoined = 0
+local totalMoney = 0
+local websocket = nil
+local logs = {}
+local heartbeatInterval = nil
+local lastSequence = nil
+
+-- Check if token is provided
+if DISCORD_TOKEN == "" then
+    statusLabel.Text = "Error: Execute with _G.DISCORD_TOKEN"
+else
+    statusLabel.Text = "Token found! Ready to start"
 end
 
--- This is the final, definitive, professional-grade joining function based on YOUR spy log.
-local function join_server_via_chilli(jobId)
-    if not STATE.IsActive then return end
-    prints("Received Job ID: " .. jobId)
-    if UI_HANDLES.StatusLabel then UI_HANDLES.StatusLabel.Text = "Status: Joining..." end
-
-    local chilliGui
-    for _, child in ipairs(game:GetService("CoreGui"):GetChildren()) do
-        if child:IsA("ScreenGui") and child:FindFirstChild("Frame", true) and child.Frame:FindFirstChild("TextLabel", true) and child.Frame.TextLabel.Text:find("By KhanhSky") then
-            chilliGui = child; break
+-- Function to add log message
+local function addLog(message)
+    local timestamp = os.date("%H:%M:%S")
+    local logText = timestamp .. " - " .. message
+    
+    table.insert(logs, logText)
+    if #logs > 20 then
+        table.remove(logs, 1)
+    end
+    
+    -- Clear existing logs
+    for _, child in ipairs(logPanel:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
         end
     end
-    if not chilliGui then prints("CRITICAL: Chilli Hub UI not found."); return end
     
-    local menuContainer = chilliGui.Frame:FindFirstChild("Frame", true)
-    local pagesContainer = chilliGui.Frame:FindFirstChild("CanvasGroup", true)
-    if not (menuContainer and pagesContainer) then prints("CRITICAL: Chilli Hub structure invalid."); return end
-
-    local serverTabButton
-    for _, button in ipairs(menuContainer:GetDescendants()) do
-        if button:IsA("TextButton") and button:FindFirstChild("TextLabel") and button.TextLabel.Text == "Server" then serverTabButton = button; break end
+    -- Add all logs
+    for i, log in ipairs(logs) do
+        local logLabel = Instance.new("TextLabel")
+        logLabel.Size = UDim2.new(1, -10, 0, 16)
+        logLabel.Position = UDim2.new(0, 5, 0, (i-1)*18)
+        logLabel.BackgroundTransparency = 1
+        logLabel.Text = log
+        logLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+        logLabel.Font = Enum.Font.Gotham
+        logLabel.TextSize = 11
+        logLabel.TextXAlignment = Enum.TextXAlignment.Left
+        logLabel.TextTruncate = Enum.TextTrunc极.AtEnd
+        logLabel.Parent = logPanel
     end
+    
+    -- Adjust canvas size
+    logPanel.Canvas极ze = UDim2.new(0, 0, 0, #logs * 18)
+end
 
-    if serverTabButton then
-        fireclick(serverTabButton)
-        task.wait(0.2)
+-- Function to parse money from string
+local function parseMoney(moneyStr)
+    if not moneyStr then return 0 end
+    local cleanStr = string.gsub(moneyStr, "[^%d%.]", "")
+    if string.find(moneyStr, "K") then
+        return tonumber(cleanStr) * 1000
+    elseif string.find(moneyStr, "M") then
+        return tonumber(cleanStr) * 1000000
     else
-        prints("CRITICAL: Could not find 'Server' tab button."); return
-    end
-
-    local jobIdInput, joinButton
-    for _, d in ipairs(pagesContainer:GetDescendants()) do
-        if not jobIdInput and d:IsA("TextBox") and d.Parent and d.Parent.Parent and d.Parent.Parent.Parent and d.Parent.Parent.Parent:IsA("TextButton") then
-            local label = d.Parent.Parent.Parent:FindFirstChild("Frame", true) and d.Parent.Parent.Parent.Frame:FindFirstChild("TextLabel", true)
-            if label and label.Text == "Job-ID Input" then jobIdInput = d end
-        end
-        if not joinButton and d:IsA("TextButton") then
-            local label = d:FindFirstChild("Frame", true) and d.Frame:FindFirstChild("TextLabel", true)
-            if label and label.Text == "Join Job-ID" then joinButton = d end
-        end
-        if jobIdInput and joinButton then break end
-    end
-
-    if jobIdInput and joinButton then
-        prints("Components found! Attempting to join...")
-        jobIdInput.Text = jobId
-        fireclick(jobIdInput)
-        task.wait(0.2)
-        fireclick(joinButton)
-        prints("Join click sent.")
-    else
-        prints("CRITICAL: Could not find Job-ID components on Server page.")
+        return tonumber(cleanStr) or 0
     end
 end
 
-local function stop_heartbeat()
-    if STATE.HeartbeatThread then task.cancel(STATE.HeartbeatThread); STATE.HeartbeatThread = nil end
-end
-
-local function disconnect_websocket()
-    stop_heartbeat()
-    if STATE.WebSocketClient then
-        prints("Disconnecting from Discord.")
-        pcall(function() STATE.WebSocketClient:Close() end)
-        STATE.WebSocketClient = nil
-    end
-end
-
--- This is the final, failsafe connection function.
-local function connect_websocket()
-    if STATE.WebSocketClient then return end
-    if DISCORD_TOKEN == "YOUR_DISCORD_TOKEN_HERE" or DISCORD_TOKEN == "" then prints("CRITICAL ERROR: You must set your DISCORD_TOKEN."); if UI_HANDLES.StatusLabel then UI_HANDLES.StatusLabel.Text = "Status: Token Missing" end return end
+-- Function to extract server info from Discord message (UPDATED FOR EMBEDS)
+local function extractServerInfo(messageData)
+    local info = {
+        name = "Unknown",
+        money = 0,
+        players = "0/8",
+        jobId = nil
+    }
     
-    prints("Connecting to Discord Gateway...")
-    if UI_HANDLES.StatusLabel then UI_HANDLES.StatusLabel.Text = "Status: Connecting..." end
-
-    local ws = WebSocket:New("wss://gateway.discord.gg/?v=9&encoding=json")
-    STATE.WebSocketClient = ws
-    getgenv().LOC_AUTOJOINER_CONNECTION = ws
-
-    ws:On("open", function()
-        prints("Connection established. Authenticating...")
-        if UI_HANDLES.StatusLabel then UI_HANDLES.StatusLabel.Text = "Status: Authenticating..." end
-        local identifyPayload = {op = 2, d = {token = DISCORD_TOKEN, properties = {os = "Windows", browser = "Discord Client", device = ""}}}
-        ws:Send(JSON:encode(identifyPayload))
-    end)
+    -- First, try to extract from content if it's a direct message
+    local content = messageData.content or ""
     
-    ws:On("message", function(message)
-        local success, data = pcall(JSON.decode, message)
-        if not success or not data then return end
-        if data.s then STATE.LastSequence = data.s end
-        if data.op == 10 then -- Hello (Heartbeat)
-            stop_heartbeat()
-            STATE.HeartbeatThread = task.spawn(function()
-                while task.wait(data.d.heartbeat_interval / 1000) do
-                    if STATE.WebSocketClient and getgenv().LOC_AUTOJOINER_IS_LOADED then
-                        pcall(function() STATE.WebSocketClient:Send(JSON:encode({op = 1, d = STATE.LastSequence})) end)
-                    else break end
+    -- Look for Job ID first (most important)
+    local jobIdMatch = string.match(content, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
+    if not jobIdMatch then
+        jobIdMatch = string.match(content, "Job ID %(PC%)[^\n]-([%w%=]+)")
+    end
+    if not jobIdMatch then
+        jobIdMatch = string.match(content, "7IRZ[%w=]+") -- Common Chilli Hub pattern
+    end
+    if not jobIdMatch then
+        -- Try to find any base64-like string that might be a job ID
+        jobIdMatch = string.match(content, "[%w+/]+=*")
+    end
+    
+    if jobIdMatch and #jobIdMatch > 10 then
+        info.jobId = jobIdMatch
+    end
+    
+    -- Look for money pattern
+    local moneyMatch = string.match(content, "💰 Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+    if not moneyMatch then
+        moneyMatch = string.match(content, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+    end
+    if moneyMatch then
+        info.money = parseMoney(moneyMatch)
+    end
+    
+    -- Look for players pattern
+    local playersMatch = string.match(content, "👥 Players[^%d]*(%d+/%d+)")
+    if not playersMatch then
+        playersMatch = string.match(content, "Players[^%d]*(%d+/%d+)")
+    end
+    if playersMatch then
+        info.players = playersMatch
+    end
+    
+    -- Look for server name
+    local nameMatch = string.match(content, "🏷️ Name[^\n]-%*([^%*]+)%*")
+    if not nameMatch then
+        nameMatch = string.match(content, "Name[^\n]-%*([^%*]+)%*")
+    end
+    if nameMatch then
+        info.name = nameMatch
+    end
+    
+    -- Check if message has embeds as fallback
+    if messageData.embeds and #messageData.embeds > 0 then
+        local embed = messageData.embeds[1]
+        
+        -- Extract from embed title
+        if embed.title and info.name == "Unknown" then
+            local nameMatch = string.match(embed.title, "[^-|•]*$")
+            if nameMatch then
+                info.name = nameMatch:gsub("^%s*(.-)%s*$", "%1")
+            end
+        end
+        
+        -- Extract from embed description
+        if embed.description then
+            -- Look for money pattern
+            if info.money == 0 then
+                local moneyMatch = string.match(embed.description, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
+                if moneyMatch then
+                    info.money = parseMoney(moneyMatch)
                 end
-            end)
-        elseif data.op == 0 then -- Dispatch
-            if data.t == "READY" then
-                prints("Successfully authenticated with Discord as " .. data.d.user.username)
-                if UI_HANDLES.StatusLabel then UI_HANDLES.StatusLabel.Text = "Status: Active" end
-            elseif data.t == "MESSAGE_CREATE" then
-                local channels = ChannelPresets[STATE.ChannelFilter] or {}
-                if table.find(channels, data.d.channel_id) and data.d.embeds and #data.d.embeds > 0 then
-                    for _, embed in ipairs(data.d.embeds) do
-                        if embed.fields then
-                            local money, jobId
-                            for _, field in ipairs(embed.fields) do
-                                if field.name and (field.name:find("Money per sec") or field.name:find("Money")) then money = parseMoney(field.value) end
-                                if field.name and field.name:find("Job ID") then jobId = field.value:gsub("`", "") end
-                            end
-                            if jobId and (money >= STATE.MoneyFilter) then
-                                join_server_via_chilli(jobId)
-                                return
-                            end
-                        end
-                    end
+            end
+            
+            -- Look for players pattern
+            if info.players == "0/8" then
+                local playersMatch = string.match(embed.description, "Players[^%d]*(%d+/%d+)")
+                if playersMatch then
+                    info.players = playersMatch
+                end
+            end
+            
+            -- Look for Job ID (PC) - most important
+            if not info.jobId then
+                local jobIdMatch = string.match(embed.description, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
+                if not jobIdMatch then
+                    jobIdMatch = string.match(embed.description, "Job ID %(PC%)[^\n]-([%w%=]+)")
+                end
+                if jobIdMatch then
+                    info.jobId = jobIdMatch
                 end
             end
         end
-    end)
-    
-    ws:On("close", function()
-        prints("Connection to Discord lost. Reconnecting...")
-        stop_heartbeat()
-        STATE.WebSocketClient = nil
-        if STATE.IsActive and getgenv().LOC_AUTOJOINER_IS_LOADED then
-            if UI_HANDLES.StatusLabel then UI_HANDLES.StatusLabel.Text = "Status: Reconnecting..." end
-            task.wait(5); connect_websocket()
+        
+        -- Extract from embed fields
+        if embed.fields then
+            for _, field in ipairs(embed.fields) do
+                if (field.name == "Money per sec" or field.name == "💰 Money per sec") and info.money == 0 then
+                    info.money = parseMoney(field.value)
+                elseif (field.name == "Players" or field.name == "👥 Players") and info.players == "0/8" then
+                    info.players = field.value
+                elseif (field.name == "Name" or field.name == "🏷️ Name") and info.name == "Unknown" then
+                    info.name = field.value:gsub("%*", "")
+                elseif field.name == "Job ID (PC)" and not info.jobId then
+                    info.jobId = field.value:gsub("`", "")
+                end
+            end
         end
-    end)
+    end
     
-    ws:On("error", function(err) prints("WebSocket Error:", err); if UI_HANDLES.StatusLabel then UI_HANDLES.StatusLabel.Text = "Status: Error" end; disconnect_websocket() end)
-    ws:Connect()
+    -- Debug logging to help identify parsing issues
+    if info.jobId then
+        addLog("Parsed server: " .. info.name .. " | Money: " .. info.money .. " | Players: " .. info.players)
+    else
+        addLog("Could not parse job ID from message")
+        if content and content ~= "" then
+            addLog("Message content: " .. string.sub(content, 1, 100) .. "...")
+        end
+    end
+    
+    return info
 end
 
---=====================================================================================================================--
---                                           [ CHILLI HUB UI INJECTION ]                                               --
---=====================================================================================================================--
-task.spawn(function()
-    prints("Persistently searching for Chilli Hub UI...")
-    local chilliGui
-    while not chilliGui do
-        pcall(function() for _, child in ipairs(game:GetService("CoreGui"):GetChildren()) do if child:IsA("ScreenGui") and child:FindFirstChild("Frame", true) and child.Frame:FindFirstChild("TextLabel", true) and child.Frame.TextLabel.Text:find("By KhanhSky") then chilliGui = child; break end end end)
-        if not chilliGui then task.wait(2) end
+-- Function to join a job instantly
+local function joinJobInstantly(jobId, money, players, serverName)
+    if not jobId or jobId == "" or #jobId < 10 then
+        statusLabel.Text = "Invalid Job ID"
+        addLog("Invalid Job ID: " .. tostring(jobId))
+        return false
     end
-    prints("Chilli Hub UI found! Injecting Autojoiner tab...")
-
-    local mainFrame = chilliGui.Frame
-    local menuContainer = mainFrame:FindFirstChild("Frame", true)
-    local pagesContainer = mainFrame:FindFirstChild("CanvasGroup", true)
-    if not (menuContainer and pagesContainer) then prints("CRITICAL: Chilli Hub structure invalid."); return end
-
-    local discordButton
-    for _, button in ipairs(menuContainer:GetDescendants()) do
-        if button:IsA("TextButton") and button:FindFirstChild("TextLabel") and button.TextLabel.Text == "Discord" then discordButton = button; break end
+    
+    -- Get current filter values
+    local minMoneyValue = tonumber(minMoneyBox.Text) or 10
+    local maxPlayersValue = tonumber(maxPlayersBox.Text) or 6
+    
+    -- Check if server meets criteria
+    local moneyValue = money or 0
+    local currentPlayers = tonumber(string.match(players, "(%d+)/")) or 0
+    local maxServerPlayers = tonumber(string.match(players, "/(%d+)")) or 8
+    
+    if moneyValue < minMoneyValue * 1000000 then
+        statusLabel.Text = "Skipped: Money too low (" .. (moneyValue/1000000) .. "M)"
+        addLog("Skipped: Money too low (" .. (moneyValue/1000000) .. "M)")
+        return false
     end
-    if not discordButton then prints("CRITICAL: Could not find Discord button to use as template."); return end
-
-    local joinerButton = discordButton:Clone()
-    joinerButton.Name = "Autojoiner"; joinerButton.TextLabel.Text = "Autojoiner"; joinerButton.Parent = discordButton.Parent
     
-    local joinerPage = Instance.new("ScrollingFrame")
-    joinerPage.Name = "Autojoiner"; joinerPage.Size = UDim2.new(1, 0, 1, 0); joinerPage.BackgroundTransparency = 1; joinerPage.BorderSizePixel = 0; joinerPage.Visible = false; joinerPage.CanvasSize = UDim2.new(0, 0, 0, 500); joinerPage.ScrollBarThickness = 4; joinerPage.Parent = pagesContainer
-    
-    local listLayout = Instance.new("UIListLayout"); listLayout.Padding = UDim.new(0, 10); listLayout.Parent = joinerPage
-    local padding = Instance.new("UIPadding"); padding.PaddingLeft = UDim.new(0, 15); padding.PaddingRight = UDim.new(0, 15); padding.PaddingTop = UDim.new(0, 15); padding.Parent = joinerPage
-    
-    local title = Instance.new("TextLabel"); title.Text = "Autojoiner"; title.Font = Enum.Font.GothamBold; title.TextSize = 24; title.TextColor3 = Color3.new(1, 1, 1); title.TextXAlignment = Enum.TextXAlignment.Left; title.BackgroundTransparency = 1; title.Size = UDim2.new(1, 0, 0, 30); title.Parent = joinerPage
-    
-    local statusLabel = Instance.new("TextLabel"); statusLabel.Size = UDim2.new(1, 0, 0, 20); statusLabel.Text = "Status: Disabled"; statusLabel.Font = Enum.Font.Gotham; statusLabel.TextSize = 14; statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200); statusLabel.TextXAlignment = Enum.TextXAlignment.Left; statusLabel.BackgroundTransparency = 1; statusLabel.Parent = joinerPage
-    UI_HANDLES.StatusLabel = statusLabel
-
-    local function create_toggle(parent, titleText, descText, callback)
-        local frame = Instance.new("Frame"); frame.Size = UDim2.new(1, 0, 0, 50); frame.BackgroundTransparency = 1; frame.Parent = parent;
-        local title = Instance.new("TextLabel"); title.Size = UDim2.new(1, -60, 0.5, 0); title.Position = UDim2.fromOffset(0, 0); title.Font = Enum.Font.GothamSemibold; title.Text = titleText; title.TextColor3 = Color3.new(1, 1, 1); title.TextSize = 16; title.TextXAlignment = Enum.TextXAlignment.Left; title.BackgroundTransparency = 1; title.Parent = frame;
-        local desc = Instance.new("TextLabel"); desc.Size = UDim2.new(1, -60, 0.5, 0); desc.Position = UDim2.fromOffset(0, 20); desc.Font = Enum.Font.Gotham; desc.Text = descText; desc.TextColor3 = Color3.fromRGB(150, 150, 150); desc.TextSize = 12; desc.TextXAlignment = Enum.TextXAlignment.Left; desc.BackgroundTransparency = 1; desc.Parent = frame;
-        local toggleButton = Instance.new("TextButton"); toggleButton.Text = ""; toggleButton.Size = UDim2.fromOffset(40, 20); toggleButton.Position = UDim2.new(1, -40, 0.5, -10); toggleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80); toggleButton.Parent = frame;
-        local corner = Instance.new("UICorner", toggleButton); corner.CornerRadius = UDim.new(1, 0);
-        local knob = Instance.new("Frame"); knob.Size = UDim2.fromOffset(16, 16); knob.Position = UDim2.fromOffset(2, 2); knob.BackgroundColor3 = Color3.new(1, 1, 1); knob.BorderSizePixel = 0; knob.Parent = toggleButton;
-        local knobCorner = Instance.new("UICorner", knob); knobCorner.CornerRadius = UDim.new(1, 0);
-        local state = { enabled = false };
-        toggleButton.MouseButton1Click:Connect(function()
-            state.enabled = not state.enabled; local targetColor = state.enabled and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(80, 80, 80); local targetPos = state.enabled and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2);
-            pcall(function() game:GetService("TweenService"):Create(toggleButton, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play(); game:GetService("TweenService"):Create(knob, TweenInfo.new(0.2), {Position = targetPos}):Play(); end)
-            if callback then callback(state.enabled) end
-        end);
-        return toggleButton, state;
+    if currentPlayers >= maxPlayersValue then
+        statusLabel.Text = "Skipped: Server full (" .. players .. ")"
+        addLog("Skipped: Server full (" .. players .. ")")
+        return false
     end
-
-    create_toggle(joinerPage, "Autojoin", "", function(value)
-        STATE.IsActive = value
-        if STATE.IsActive then connect_websocket() else disconnect_websocket(); if UI_HANDLES.StatusLabel then UI_HANDLES.StatusLabel.Text = "Status: Disabled" end end
+    
+    -- Join the server instantly
+    statusLabel.Text = "Joining " .. (serverName or "server") .. "..."
+    addLog("Joining " .. (serverName or "server") .. " (" .. players .. ")")
+    lastServerLabel.Text = "Last: " .. (serverName or "Unknown")
+    
+    -- Use Roblox's TeleportService to join the server
+    local success, result = pcall(function()
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
     end)
     
-    local allTabs = {}
-    for _, button in ipairs(menuContainer:GetDescendants()) do
-        if button:IsA("TextButton") and button:FindFirstChild("TextLabel") then
-            allTabs[button] = pagesContainer:FindFirstChild(button.TextLabel.Text)
-        end
+    if success then
+        serversJoined = serversJoined + 1
+        totalMoney = totalMoney + moneyValue
+        serversLabel.Text = "Servers: " .. serversJoined
+        moneyLabel.Text = "Money: $" .. string.format("%.2fM", totalMoney/1000000)
+        statusLabel.Text = "Joined successfully!"
+        addLog("Successfully joined server!")
+        return true
+    else
+        statusLabel.Text = "Failed to join: Server unavailable"
+        addLog("Failed to join: " .. tostring(result))
+        return false
     end
-    allTabs[joinerButton] = joinerPage
+end
 
-    for button, page in pairs(allTabs) do
-        button.MouseButton1Click:Connect(function()
-            for b, p in pairs(allTabs) do if p then p.Visible = false end end
-            if page then page.Visible = true end
+-- Function to send heartbeat to Discord
+local function sendHeartbeat()
+    if websocket and websocket.Connected then
+        local payload = {
+            op = 1,
+            d = lastSequence
+        }
+        websocket:Send(HttpService:JSONEncode(payload))
+    end
+end
+
+-- Function to connect to Discord Gateway directly (UPDATED FOR USER TOKENS)
+local function connectToDiscordGateway()
+    if DISCORD_TOKEN == "" then
+        statusLabel.Text = "Error: No Discord token"
+        addLog("Error: No Discord token provided")
+        return false
+    end
+    
+    statusLabel.Text = "Connecting to Discord..."
+    addLog("Connecting to Discord gateway...")
+    
+    local success, ws = pcall(function()
+        -- Try different WebSocket connection methods
+        if syn and syn.websocket then
+            return syn.websocket.connect(DISCORD_GATEWAY)
+        elseif WebSocket then
+            return WebSocket.connect(DISCORD_GATEWAY)
+        else
+            error("No WebSocket implementation found")
+        end
+    end)
+    
+    if success and ws then
+        websocket = ws
+        statusLabel.Text = "Connected to Discord Gateway!"
+        addLog("Connected to Discord gateway")
+        
+        -- Listen for messages
+        websocket.OnMessage:Connect(function(message)
+            local success, data = pcall(function()
+                return HttpService:JSONDecode(message)
+            end)
+            
+            if success and data then
+                -- Store sequence number for heartbeats
+                if data.s then
+                    lastSequence = data.s
+                end
+                
+                -- Handle Discord Gateway events
+                if data.op == 10 then -- Hello
+                    addLog("Discord handshake received")
+                    heartbeatInterval = data.d.heartbeat_interval / 1000
+                    
+                    -- Send identify payload (USER token format)
+                    local identifyPayload = {
+                        op = 2,
+                        d = {
+                            token = DISCORD_TOKEN,
+                            properties = {
+                                os = "Windows",
+                                browser = "Chrome", 
+                                device = ""
+                            },
+                            intents = 513, -- GUILD_MESSAGES + MESSAGE_CONTENT
+                            presence = {
+                                status = "online",
+                                afk = false
+                            }
+                        }
+                    }
+                    
+                    local success, err = pcall(function()
+                        websocket:Send(HttpService:JSONEncode(identifyPayload))
+                    end)
+                    
+                    if not success then
+                        statusLabel.Text = "Failed to identify: " .. tostring(err)
+                        addLog("Failed to identify with Discord: " .. tostring(err))
+                        return false
+                    end
+                    
+                    addLog("Sent identify payload to Discord")
+                    
+                    -- Start heartbeat timer
+                    spawn(function()
+                        while websocket and websocket.Connected do
+                            sendHeartbeat()
+                            wait(heartbeatInterval)
+                        end
+                    end)
+                    
+                elseif data.t == "MESSAGE_CREATE" then
+                    if isRunning then
+                        local channelId = data.d.channel_id
+                        
+                        -- Check if message is from selected channel
+                        local selectedChannel = CHILLI_HUB_CHANNELS[channelDropdown.Text]
+                        if channelId == selectedChannel then
+                            -- Extract server info from message (including embeds)
+                            local serverInfo = extractServerInfo(data.d)
+                            if serverInfo.jobId then
+                                addLog("Found server: " .. serverInfo.name)
+                                joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
+                            else
+                                addLog("No valid job ID found in message")
+                            end
+                        end
+                    end
+                elseif data.op == 11 then -- Heartbeat ACK
+                    -- Heartbeat acknowledged
+                elseif data.op == 9 then -- Invalid session
+                    addLog("Invalid session, reconnecting...")
+                    wait(2)
+                    connectToDiscordGateway()
+                end
+            end
+        end)
+        
+        websocket.OnClose:Connect(function()
+            statusLabel.Text = "Discord connection closed"
+            addLog("Discord connection closed")
+            websocket = nil
+            if isRunning then
+                wait(3)
+                connectToDiscordGateway()
+            end
+        end)
+        
+        return true
+    else
+        statusLabel.Text = "Failed to connect to Discord"
+        addLog("Failed to connect to Discord gateway: " .. tostring(ws))
+        return false
+    end
+end
+
+-- Toggle button functionality
+toggleButton.MouseButton1Click:Connect(function()
+    if DISCORD_TOKEN == "" then
+        statusLabel.Text = "Error: Execute with _极.DISCORD_TOKEN"
+        addLog("Error: No Discord token provided")
+        return
+    end
+    
+    isRunning = not isRunning
+    
+    if isRunning then
+        toggleButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        toggleButton.Text = "STOP AUTOJOINER"
+        addLog("AutoJoiner started")
+        connectToDiscordGateway()
+    else
+        toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+        toggleButton.Text = "START AUTOJOINER"
+        addLog("AutoJoiner stopped")
+        if websocket then
+            websocket:Close()
+            websocket = nil
+        end
+        statusLabel.Text = "Stopped - Ready"
+    end
+end)
+
+-- Channel dropdown functionality
+local channelOptions = {"under_500k", "500k_1m", "500k_1m_alt", "1m_10m", "1m_10m_alt", "10m_plus"}
+local dropdownOpen = false
+local dropdownFrame = nil
+
+local function toggleDropdown()
+    if dropdownOpen then
+        if dropdownFrame then
+            dropdownFrame:Destroy()
+            dropdownFrame = nil
+        end
+        dropdownOpen = false
+        return
+    end
+    
+    dropdownOpen = true
+    
+    dropdownFrame = Instance.new("Frame")
+    dropdownFrame.Name = "ChannelDropdownOptions"
+    dropdownFrame.Size = UDim2.new(0, channelDropdown.AbsoluteSize.X, 0, #channelOptions * 25)
+    dropdownFrame.Position = UDim2.new(0, channelDropdown.AbsolutePosition.X - mainContainer.AbsolutePosition.X, 0, channelDropdown.AbsolutePosition.Y - mainContainer.AbsolutePosition.Y + channelDropdown.AbsoluteSize.Y)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    dropdownFrame.BorderSizePixel = 0
+    dropdownFrame.Parent = mainContainer
+    dropdownFrame.ZIndex = 10
+    
+    local dropdownCorner = Instance.new("UICorner")
+    dropdownCorner.CornerRadius = UDim.new(0, 4)
+    dropdownCorner.Parent = dropdownFrame
+    
+    local dropdownLayout = Instance.new("UI极istLayout")
+    dropdownLayout.Parent = dropdownFrame
+    
+    for _, option in ipairs(channelOptions) do
+        local optionButton = Instance.new("TextButton")
+        optionButton.Size = UDim2.new(1, 0, 0, 25)
+        optionButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        optionButton.BorderSizePixel = 0
+        optionButton.Text = option
+        optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        optionButton.Font = Enum.Font.Gotham
+        optionButton.TextSize = 12
+        optionButton.Parent = dropdownFrame
+        
+        optionButton.MouseButton1Click:Connect(function()
+            channelDropdown.Text = option
+            addLog("Channel set to: " .. option)
+            toggleDropdown()
         end)
     end
+end
 
-    getgenv().LOC_AUTOJOINER_UI_ELEMENTS = {joinerButton, joinerPage}
-    prints("Successfully injected Autojoiner tab into Chilli Hub.")
+channelDropdown.MouseButton1Click:Connect(toggleDropdown)
+
+-- Make the window draggable
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    mainContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainContainer.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
 end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Close dropdown when clicking elsewhere
+UserInputService.InputBegan:Connect(function(input)
+    if dropdownOpen and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mousePos = input.Position
+        local dropdownPos = dropdownFrame and dropdownFrame.AbsolutePosition
+        local dropdownSize = dropdownFrame and dropdownFrame.AbsoluteSize
+        
+        if dropdownPos and dropdownSize then
+            if not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
+                   mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
+                toggleDropdown()
+            end
+        end
+    end
+end)
+
+-- Initial setup
+statusLabel.Text = "Ready - Start AutoJoiner"
+serversLabel.Text = "Servers: 0"
+moneyLabel.Text = "Money: $0"
+lastServerLabel.Text = "Last: None"
+addLog("Fractucul AutoJoiner initialized")
+addLog("Select channel and click START")
+
+print("Fractucul-Style AutoJoiner loaded!")
+print("This is a pure script solution - no external programs needed")
+print("Make sure to execute with your USER Discord token (not bot token)")
+print("Click START AUTOJOINER to begin monitoring Discord channels")
