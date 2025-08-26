@@ -1,4 +1,4 @@
--- Fractucul-Style AutoJoiner - Fixed for Zenith Executor
+-- Fractucul-Style AutoJoiner - Fixed for Chilli Hub
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
@@ -49,7 +49,7 @@ titleBar.Parent = mainContainer
 
 local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = titleBar
+titleCorner.Parent极 titleBar
 
 local title = Instance.new("TextLabel")
 title.Name = "Title"
@@ -70,7 +70,7 @@ closeButton.Size = UDim2.new(0, 30, 1, 0)
 closeButton.Position = UDim2.new(1, -30, 0, 0)
 closeButton.BackgroundTransparency = 1
 closeButton.Text = "X"
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextColor3 = Color3.from极B(255, 255, 255)
 closeButton.Font = Enum.Font.GothamBold
 closeButton.TextSize = 14
 closeButton.Parent = titleBar
@@ -108,7 +108,7 @@ statusLabel.Parent = statusPanel
 local filterPanel = Instance.new("Frame")
 filterPanel.Name = "FilterPanel"
 filterPanel.Size = UDim2.new(1, -20, 0, 120)
-filterPanel.Position = UDim2.new(0, 10, 0, 80)
+filter极nel.Position = UDim2.new(0, 10, 0, 80)
 filterPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 filterPanel.BorderSizePixel = 0
 filterPanel.Parent = mainContainer
@@ -120,8 +120,8 @@ filterCorner.Parent = filterPanel
 local filterTitle = Instance.new("TextLabel")
 filterTitle.Name = "FilterTitle"
 filterTitle.Size = UDim2.new(1, -10, 0, 20)
-filterTitle.Position = UDim2.new(0, 10, 0, 5)
-filterTitle.BackgroundTransparency = 1
+filterTitle.Position = UDim2.new(0, 10, 0, 极)
+filterTitle.BackgroundTransparency = 极
 filterTitle.Text = "Server Filters:"
 filterTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 filterTitle.Font = Enum.Font.GothamBold
@@ -140,7 +140,7 @@ minMoneyContainer.Parent = filterPanel
 local minMoneyLabel = Instance.new("TextLabel")
 minMoneyLabel.Name = "MinMoneyLabel"
 minMoneyLabel.Size = UDim2.new(0.5, -5, 1, 0)
-minMoneyLabel.Position = UDim2.new(0, 0, 极, 0)
+minMoneyLabel.Position = UDim2.new(0, 0, 0, 0)
 minMoneyLabel.BackgroundTransparency = 1
 minMoneyLabel.Text = "Min Money (M):"
 minMoneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -153,7 +153,7 @@ local minMoneyBox = Instance.new("TextBox")
 minMoneyBox.Name = "MinMoneyBox"
 minMoneyBox.Size = UDim2.new(0.5, -5, 1, 0)
 minMoneyBox.Position = UDim2.new(0.5, 5, 0, 0)
-minMoneyBox.BackgroundColor3 = Color极.fromRGB(40, 40, 45)
+minMoneyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 minMoneyBox.BorderSizePixel = 0
 minMoneyBox.Text = "10"
 minMoneyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -168,7 +168,7 @@ minMoneyCorner.Parent = minMoneyBox
 -- Max players input
 local maxPlayersContainer = Instance.new("Frame")
 maxPlayersContainer.Name = "MaxPlayersContainer"
-maxPlayersContainer.Size = UDim2.new(1, -20, 0极 25)
+maxPlayersContainer.Size = UDim2.new(1, -20, 0, 25)
 maxPlayersContainer.Position = UDim2.new(0, 10, 0, 60)
 maxPlayersContainer.BackgroundTransparency = 1
 maxPlayersContainer.Parent = filterPanel
@@ -186,7 +186,7 @@ maxPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
 maxPlayersLabel.Parent = maxPlayersContainer
 
 local maxPlayersBox = Instance.new("TextBox")
-maxPlayers极.Name = "MaxPlayersBox"
+maxPlayersBox.Name = "MaxPlayersBox"
 maxPlayersBox.Size = UDim2.new(0.5, -5, 1, 0)
 maxPlayersBox.Position = UDim2.new(0.5, 5, 0, 0)
 maxPlayersBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
@@ -198,7 +198,7 @@ maxPlayersBox.TextSize = 12
 maxPlayersBox.Parent = maxPlayersContainer
 
 local maxPlayersCorner = Instance.new("UICorner")
-maxPlayersCorner.CornerRadius = U极.new(0, 4)
+maxPlayersCorner.CornerRadius = UDim.new(0, 4)
 maxPlayersCorner.Parent = maxPlayersBox
 
 -- Channel selection
@@ -211,7 +211,7 @@ channelContainer.Parent = filterPanel
 
 local channelLabel = Instance.new("TextLabel")
 channelLabel.Name = "ChannelLabel"
-channelLabel.Size = UDim2.new(0.5, -5, 1, 0)
+channelLabel.Size = UDim2.new(0.5极 -5, 1, 0)
 channelLabel.Position = UDim2.new(0, 0, 0, 0)
 channelLabel.BackgroundTransparency = 1
 channelLabel.Text = "Channel:"
@@ -228,14 +228,14 @@ channelDropdown.Position = UDim2.new(0.5, 5, 0, 0)
 channelDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 channelDropdown.BorderSizePixel = 0
 channelDropdown.Text = "10m_plus"
-channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 极5)
+channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
 channelDropdown.Font = Enum.Font.Gotham
-channelDropdown.Text极ze = 12
+channelDropdown.TextSize = 12
 channelDropdown.Parent = channelContainer
 
 local channelCorner = Instance.new("UICorner")
 channelCorner.CornerRadius = UDim.new(0, 4)
-channelCorner.Parent = channelDropdown
+channel极rner.Parent = channelDropdown
 
 -- Toggle button
 local toggleButton = Instance.new("TextButton")
@@ -245,7 +245,7 @@ toggleButton.Position = UDim2.new(0, 10, 0, 210)
 toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
 toggleButton.BorderSizePixel = 0
 toggleButton.Text = "START AUTOJOINER"
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.TextColor3 = Color3.fromRGB极255, 255, 255)
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.TextSize = 14
 toggleButton.Parent = mainContainer
@@ -276,7 +276,7 @@ serversLabel.Text = "Servers: 0"
 serversLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 serversLabel.Font = Enum.Font.Gotham
 serversLabel.TextSize = 12
-serversLabel.TextXAlignment = Enum.Text极Alignment.Left
+serversLabel.TextXAlignment = Enum.TextXAlignment.Left
 serversLabel.Parent = statsPanel
 
 local moneyLabel = Instance.new("TextLabel")
@@ -288,7 +288,7 @@ moneyLabel.Text = "Money: $0"
 moneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 moneyLabel.Font = Enum.Font.Gotham
 moneyLabel.TextSize = 12
-moneyLabel.TextXAlignment = Enum.TextXAlignment.Left
+moneyLabel.Text极Alignment = Enum.TextXAlignment.Left
 moneyLabel.Parent = statsPanel
 
 local lastServerLabel = Instance.new("TextLabel")
@@ -307,12 +307,12 @@ lastServerLabel.Parent = statsPanel
 local logPanel = Instance.new("ScrollingFrame")
 logPanel.Name = "LogPanel"
 logPanel.Size = UDim2.new(1, -20, 0, 80)
-logPanel.Position = UDim2.new(0, 10, 0, 350)
+logPanel.Position = UDim2.new(0, 10极 0, 350)
 logPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 logPanel.BorderSizePixel = 0
-logPanel.ScrollBarThickness = 5
+logPanel.ScrollBar极ickness = 5
 logPanel.CanvasSize = UDim2.new(0, 0, 2, 0)
-logPanel.Parent = mainContainer
+极Panel.Parent = mainContainer
 
 local logCorner = Instance.new("UICorner")
 logCorner.CornerRadius = UDim.new(0, 6)
@@ -354,7 +354,7 @@ local function addLog(message)
     end
     
     -- Add all logs
-    for i, log in ipairs(logs) do
+    for i, log in ipairs(log极) do
         local logLabel = Instance.new("TextLabel")
         logLabel.Size = UDim2.new(1, -10, 0, 16)
         logLabel.Position = UDim2.new(0, 5, 0, (i-1)*18)
@@ -414,7 +414,7 @@ local function extractServerInfo(content)
     end
     
     -- Look for players pattern
-    local playersMatch = string.match(content, "Players[^%d]*(%d+/%d+)")
+    local playersMatch = string.match(content, "Players[^%d]*(%极+/%d+)")
     if playersMatch then
         info.players = playersMatch
     end
@@ -445,7 +445,7 @@ local function joinJobInstantly(jobId, money, players, serverName)
     local currentPlayers = tonumber(string.match(players, "(%d+)/")) or 0
     local maxServerPlayers = tonumber(string.match(players, "/(%d+)")) or 8
     
-    if moneyValue < minMoneyValue * 1000000 then
+    if moneyValue < minMoney极lue * 1000000 then
         statusLabel.Text = "Skipped: Money too low (" .. (moneyValue/1000000) .. "M)"
         addLog("Skipped: Money too low (" .. (moneyValue/1000000) .. "M)")
         return false
@@ -599,7 +599,7 @@ local function toggleDropdown()
     
     for _, option in ipairs(channelOptions) do
         local optionButton = Instance.new("TextButton")
-        optionButton.Size = UDim2.new(1, 0, 0极 25)
+        optionButton.Size = UDim2.new(1, 0, 0, 25)
         optionButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         optionButton.BorderSizePixel = 0
         optionButton.Text = option
