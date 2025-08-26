@@ -1,5 +1,5 @@
 -- Fractucul-Style AutoJoiner with Channel Selection
--- Usage: Execute with DISCORD_TOKEN = "your_token_here"
+-- Usage: Execute with _G.DISCORD_TOKEN = "your_token_here"
 
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
@@ -215,6 +215,13 @@ local minMoney = 10 -- Minimum 10M/s for 10m+ channel
 local maxPlayers = 7 -- Don't join if 7/8 or 8/8
 local discordConnected = false
 local selectedChannel = "10m_plus"
+
+-- Check if token is provided
+if DISCORD_TOKEN == "" then
+    statusLabel.Text = "Error: Execute with _G.DISCORD_TOKEN"
+else
+    statusLabel.Text = "Token found! Ready to start"
+end
 
 -- Function to parse money from string
 local function parseMoney(moneyStr)
@@ -456,7 +463,7 @@ end)
 -- Toggle button functionality
 toggleButton.MouseButton1Click:Connect(function()
     if DISCORD_TOKEN == "" then
-        statusLabel.Text = "Error: Execute with DISCORD_TOKEN = 'your_token'"
+        statusLabel.Text = "Error: Execute with _G.DISCORD_TOKEN"
         return
     end
     
