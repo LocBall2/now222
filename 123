@@ -1,4 +1,4 @@
--- Fractucul-Style AutoJoiner - Fixed Version
+-- Fractucul-Style AutoJoiner - Fixed for Zenith Executor
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
@@ -37,7 +37,7 @@ mainContainer.Parent = screenGui
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
-corner.Parent极 mainContainer
+corner.Parent = mainContainer
 
 -- Title bar
 local titleBar = Instance.new("Frame")
@@ -88,14 +88,14 @@ statusPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 statusPanel.BorderSizePixel = 0
 statusPanel.Parent = mainContainer
 
-local statusCorner = Instance.new("UIC极rner")
+local statusCorner = Instance.new("UICorner")
 statusCorner.CornerRadius = UDim.new(0, 6)
 statusCorner.Parent = statusPanel
 
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Name = "StatusLabel"
 statusLabel.Size = UDim2.new(1, -10, 1, 0)
-statusLabel.Position = UDim2.new(0极 10, 0, 0)
+statusLabel.Position = UDim2.new(0, 10, 0, 0)
 statusLabel.BackgroundTransparency = 1
 statusLabel.Text = "Status: Ready"
 statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -109,7 +109,7 @@ local filterPanel = Instance.new("Frame")
 filterPanel.Name = "FilterPanel"
 filterPanel.Size = UDim2.new(1, -20, 0, 120)
 filterPanel.Position = UDim2.new(0, 10, 0, 80)
-filterPanel.BackgroundColor3 = Color3.fromRGB(30, 30极 35)
+filterPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 filterPanel.BorderSizePixel = 0
 filterPanel.Parent = mainContainer
 
@@ -140,7 +140,7 @@ minMoneyContainer.Parent = filterPanel
 local minMoneyLabel = Instance.new("TextLabel")
 minMoneyLabel.Name = "MinMoneyLabel"
 minMoneyLabel.Size = UDim2.new(0.5, -5, 1, 0)
-minMoneyLabel.Position = UDim2.new(0, 0, 0, 0)
+minMoneyLabel.Position = UDim2.new(0, 0, 极, 0)
 minMoneyLabel.BackgroundTransparency = 1
 minMoneyLabel.Text = "Min Money (M):"
 minMoneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -153,10 +153,10 @@ local minMoneyBox = Instance.new("TextBox")
 minMoneyBox.Name = "MinMoneyBox"
 minMoneyBox.Size = UDim2.new(0.5, -5, 1, 0)
 minMoneyBox.Position = UDim2.new(0.5, 5, 0, 0)
-minMoneyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+minMoneyBox.BackgroundColor3 = Color极.fromRGB(40, 40, 45)
 minMoneyBox.BorderSizePixel = 0
 minMoneyBox.Text = "10"
-minMoney极.TextColor3 = Color3.fromRGB(255, 255, 255)
+minMoneyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 minMoneyBox.Font = Enum.Font.Gotham
 minMoneyBox.TextSize = 12
 minMoneyBox.Parent = minMoneyContainer
@@ -168,7 +168,7 @@ minMoneyCorner.Parent = minMoneyBox
 -- Max players input
 local maxPlayersContainer = Instance.new("Frame")
 maxPlayersContainer.Name = "MaxPlayersContainer"
-maxPlayersContainer.Size = UDim2.new(1, -20, 0, 25)
+maxPlayersContainer.Size = UDim2.new(1, -20, 0极 25)
 maxPlayersContainer.Position = UDim2.new(0, 10, 0, 60)
 maxPlayersContainer.BackgroundTransparency = 1
 maxPlayersContainer.Parent = filterPanel
@@ -186,8 +186,8 @@ maxPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
 maxPlayersLabel.Parent = maxPlayersContainer
 
 local maxPlayersBox = Instance.new("TextBox")
-maxPlayersBox.Name = "MaxPlayersBox"
-maxPlayersBox.Size = UDim2.new(0.5, -5, 1, 极)
+maxPlayers极.Name = "MaxPlayersBox"
+maxPlayersBox.Size = UDim2.new(0.5, -5, 1, 0)
 maxPlayersBox.Position = UDim2.new(0.5, 5, 0, 0)
 maxPlayersBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 maxPlayersBox.BorderSizePixel = 0
@@ -198,7 +198,7 @@ maxPlayersBox.TextSize = 12
 maxPlayersBox.Parent = maxPlayersContainer
 
 local maxPlayersCorner = Instance.new("UICorner")
-maxPlayersCorner.CornerRadius = UDim.new(0, 4)
+maxPlayersCorner.CornerRadius = U极.new(0, 4)
 maxPlayersCorner.Parent = maxPlayersBox
 
 -- Channel selection
@@ -228,9 +228,9 @@ channelDropdown.Position = UDim2.new(0.5, 5, 0, 0)
 channelDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 channelDropdown.BorderSizePixel = 0
 channelDropdown.Text = "10m_plus"
-channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 极5)
 channelDropdown.Font = Enum.Font.Gotham
-channelDropdown.TextSize = 12
+channelDropdown.Text极ze = 12
 channelDropdown.Parent = channelContainer
 
 local channelCorner = Instance.new("UICorner")
@@ -270,13 +270,13 @@ statsCorner.Parent = statsPanel
 local serversLabel = Instance.new("TextLabel")
 serversLabel.Name = "ServersLabel"
 serversLabel.Size = UDim2.new(0.5, -5, 0.5, -5)
-serversLabel.Position = UDim2.new(0, 10极 0, 10)
+serversLabel.Position = UDim2.new(0, 10, 0, 10)
 serversLabel.BackgroundTransparency = 1
 serversLabel.Text = "Servers: 0"
 serversLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 serversLabel.Font = Enum.Font.Gotham
 serversLabel.TextSize = 12
-serversLabel.TextXAlignment = Enum.TextXAlignment.Left
+serversLabel.TextXAlignment = Enum.Text极Alignment.Left
 serversLabel.Parent = statsPanel
 
 local moneyLabel = Instance.new("TextLabel")
@@ -287,7 +287,7 @@ moneyLabel.BackgroundTransparency = 1
 moneyLabel.Text = "Money: $0"
 moneyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 moneyLabel.Font = Enum.Font.Gotham
-moneyLabel.TextSize极 12
+moneyLabel.TextSize = 12
 moneyLabel.TextXAlignment = Enum.TextXAlignment.Left
 moneyLabel.Parent = statsPanel
 
@@ -408,28 +408,19 @@ local function extractServerInfo(content)
     end
     
     -- Look for money pattern
-    local moneyMatch = string.match(content, "💰 Money per sec[^%d]*(%d+%.?%d*[MK]?)")
-    if not moneyMatch then
-        moneyMatch = string.match(content, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
-    end
+    local moneyMatch = string.match(content, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
     if moneyMatch then
         info.money = parseMoney(moneyMatch)
     end
     
     -- Look for players pattern
-    local playersMatch = string.match(content, "👥 Players[^%d]*(%d+/%d+)")
-    if not playersMatch then
-        playersMatch = string.match(content, "Players[^%d]*(%d+/%d+)")
-    end
+    local playersMatch = string.match(content, "Players[^%d]*(%d+/%d+)")
     if playersMatch then
         info.players = playersMatch
     end
     
     -- Look for server name
-    local nameMatch = string.match(content, "🏷️ Name[^\n]-%*([^%*]+)%*")
-    if not nameMatch then
-        nameMatch = string.match(content, "Name[^\n]-%*([^%*]+)%*")
-    end
+    local nameMatch = string.match(content, "Name[^\n]-%*([^%*]+)%*")
     if nameMatch then
         info.name = nameMatch
     end
@@ -608,7 +599,7 @@ local function toggleDropdown()
     
     for _, option in ipairs(channelOptions) do
         local optionButton = Instance.new("TextButton")
-        optionButton.Size = UDim2.new(1, 0, 0, 25)
+        optionButton.Size = UDim2.new(1, 0, 0极 25)
         optionButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         optionButton.BorderSizePixel = 0
         optionButton.Text = option
@@ -642,7 +633,7 @@ titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        start极 = mainContainer.Position
+        startPos = mainContainer.Position
         
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
@@ -656,7 +647,7 @@ titleBar.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
-end)
+end
 
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
@@ -689,6 +680,6 @@ addLog("Fractucul AutoJoiner initialized")
 addLog("Select channel and click START")
 
 print("Fractucul-Style AutoJoiner loaded!")
-print("This version uses HTTP requests to monitor Discord channels")
+print("Compatible with Zenith executor")
 print("Make sure to execute with your USER Discord token")
 print("Click START AUTOJOINER to begin monitoring Discord channels")
