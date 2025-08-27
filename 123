@@ -1,4 +1,4 @@
--- Fractucul-Style AutoJoiner for Chilli Hub
+-- Fractucul-Style AutoJoiner - WebSocket Version
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
@@ -9,12 +9,16 @@ local player = Players.LocalPlayer
 
 -- Discord configuration
 local DISCORD_TOKEN = _G.DISCORD_TOKEN or ""
+local DISCORD_GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json"
 
 -- Chilli Hub channels to monitor
 local CHILLI_HUB_CHANNELS = {
-    ["10m_plus"] = "1401775181025775738",
-    ["1m_10m"] = "1401775061706346536",
-    ["500k_1m"] = "1401775125765947442"
+    ["under_500k"] = "1394958052536619059",
+    ["500k_1m"] = "1394958062166474823", 
+    ["500k_1m_alt"] = "1400302142702751864",
+    ["1m_10m"] = "1399474388105035988",
+    ["1m_10m_alt"] = "1400302392431349770",
+    ["10m_plus"] = "1399474419038032024",
 }
 
 -- Create main UI
@@ -25,7 +29,7 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- Main container
 local mainContainer = Instance.new("Frame")
-mainContainer.Name = "MainContainer"
+mainContainer.Name = "极ainContainer"
 mainContainer.Size = UDim2.new(0, 400, 0, 450)
 mainContainer.Position = UDim2.new(0.05, 0, 0.3, 0)
 mainContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
@@ -49,8 +53,8 @@ titleCorner.CornerRadius = UDim.new(0, 8)
 titleCorner.Parent = titleBar
 
 local title = Instance.new("TextLabel")
-title.Name极 "Title"
-title.Size = UDim2.new(1, -40, 1, 0)
+title.Name = "Title"
+title.Size = UDim2.new(1, -40极 1, 0)
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Fractucul AutoJoiner"
@@ -92,7 +96,7 @@ statusCorner.Parent = statusPanel
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Name = "StatusLabel"
 statusLabel.Size = UDim2.new(1, -10, 1, 0)
-statusLabel.Position = UDim2.new(0极 10, 0, 0)
+statusLabel.Position = UDim2.new(0, 10, 0, 0)
 statusLabel.BackgroundTransparency = 1
 statusLabel.Text = "Status: Ready"
 statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -121,18 +125,18 @@ filterTitle.Position = UDim2.new(0, 10, 0, 5)
 filterTitle.BackgroundTransparency = 1
 filterTitle.Text = "Server Filters:"
 filterTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-filterTitle.Font极 Enum.Font.GothamBold
-filterTitle.TextSize = 12
+filterTitle.Font = Enum.Font.GothamBold
+filter极itle.TextSize = 12
 filterTitle.TextXAlignment = Enum.TextXAlignment.Left
 filterTitle.Parent = filterPanel
 
 -- Minimum money input
-local minMoneyContainer = Instance.new("Frame")
+local minMoneyContainer = Instance.new("极rame")
 minMoneyContainer.Name = "MinMoneyContainer"
 minMoneyContainer.Size = UDim2.new(1, -20, 0, 25)
 minMoneyContainer.Position = UDim2.new(0, 10, 极, 30)
 minMoneyContainer.BackgroundTransparency = 1
-极MoneyContainer.Parent = filterPanel
+minMoneyContainer.Parent = filterPanel
 
 local minMoneyLabel = Instance.new("TextLabel")
 minMoneyLabel.Name = "MinMoneyLabel"
@@ -159,7 +163,7 @@ minMoneyBox.TextSize = 12
 minMoneyBox.Parent = minMoneyContainer
 
 local minMoneyCorner = Instance.new("UICorner")
-minMoneyCorner.CornerRadius = UDim.new(0, 4)
+minMoneyCorner.CornerRadius = UDim.new(0极 4)
 minMoneyCorner.Parent = minMoneyBox
 
 -- Max players input
@@ -176,13 +180,13 @@ maxPlayersLabel.Size = UDim2.new(0.5, -5, 1, 0)
 maxPlayersLabel.Position = UDim2.new(0, 0, 0, 0)
 maxPlayersLabel.BackgroundTransparency = 1
 maxPlayersLabel.Text = "Max Players:"
-maxPlayersLabel.Text极or3 = Color3.fromRGB(200, 200, 200)
+maxPlayersLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 maxPlayersLabel.Font = Enum.Font.Gotham
 maxPlayersLabel.TextSize = 12
 maxPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
 maxPlayersLabel.Parent = maxPlayersContainer
 
-local maxPlayers极 = Instance.new("TextBox")
+local maxPlayersBox = Instance.new("TextBox")
 maxPlayersBox.Name = "MaxPlayersBox"
 maxPlayersBox.Size = UDim2.new(0.5, -5, 1, 0)
 maxPlayersBox.Position = UDim2.new(0.5, 5, 0, 0)
@@ -221,11 +225,11 @@ channelLabel.Parent = channelContainer
 local channelDropdown = Instance.new("TextButton")
 channelDropdown.Name = "ChannelDropdown"
 channelDropdown.Size = UDim2.new(0.5, -5, 1, 0)
-channelDropdown.Position = UDim2.new(0.5, 5, 0, 0)
+channelDropdown.Position = UDim2.new(0.5极 5, 0, 0)
 channelDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 channelDropdown.BorderSizePixel = 0
 channelDropdown.Text = "10m_plus"
-channelDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+channelDropdown.TextColor3 = Color极.fromRGB(255, 255, 255)
 channelDropdown.Font = Enum.Font.Gotham
 channelDropdown.TextSize = 12
 channelDropdown.Parent = channelContainer
@@ -239,7 +243,7 @@ local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Size = UDim2.new(1, -20, 0, 40)
 toggleButton.Position = UDim2.new(0, 10, 0, 210)
-toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160极 60)
 toggleButton.BorderSizePixel = 0
 toggleButton.Text = "START AUTOJOINER"
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -272,7 +276,7 @@ serversLabel.BackgroundTransparency = 1
 serversLabel.Text = "Servers: 0"
 serversLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 serversLabel.Font = Enum.Font.Gotham
-serversLabel.TextSize极 12
+serversLabel.TextSize = 12
 serversLabel.TextXAlignment = Enum.TextXAlignment.Left
 serversLabel.Parent = statsPanel
 
@@ -324,7 +328,10 @@ logLayout.Padding = UDim.new(0, 2)
 local isRunning = false
 local serversJoined = 0
 local totalMoney = 0
+local websocket = nil
 local logs = {}
+local heartbeatInterval = nil
+local lastSequence = nil
 
 -- Check if token is provided
 if DISCORD_TOKEN == "" then
@@ -359,23 +366,23 @@ local function addLog(message)
         logLabel.Text = log
         logLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
         logLabel.Font = Enum.Font.Gotham
-        logLabel.TextSize = 11
+        logLabel.TextSize极 11
         logLabel.TextXAlignment = Enum.TextXAlignment.Left
         logLabel.TextTruncate = Enum.TextTruncate.AtEnd
         logLabel.Parent = logPanel
     end
     
     -- Adjust canvas size
-    logPanel.Canvas极 = UDim2.new(0, 0, 0, #logs * 18)
+    logPanel.CanvasSize = UDim2.new(0, 0, 0, #logs * 18)
 end
 
 -- Function to parse money from string
 local function parseMoney(moneyStr)
     if not moneyStr then return 0 end
     local cleanStr = string.gsub(moneyStr, "[^%d%.]", "")
-    if string.find(moneyStr, "K") or string.find(moneyStr, "k") then
+    if string.find(moneyStr, "K") then
         return tonumber(cleanStr) * 1000
-    elseif string.find(moneyStr, "M") or string.find(moneyStr, "m") then
+    elseif string.find(moneyStr, "M") then
         return tonumber(cleanStr) * 1000000
     else
         return tonumber(cleanStr) or 0
@@ -383,13 +390,15 @@ local function parseMoney(moneyStr)
 end
 
 -- Function to extract server info from Discord message
-local function extractServerInfo(content)
+local function extractServerInfo(messageData)
     local info = {
         name = "Unknown",
         money = 0,
         players = "0/8",
         jobId = nil
     }
+    
+    local content = messageData.content or ""
     
     -- Look for Job ID first (most important)
     local jobIdMatch = string.match(content, "Job ID %(PC%)[^\n]-%`([^%`]+)%`")
@@ -406,9 +415,6 @@ local function extractServerInfo(content)
     
     -- Look for money pattern
     local moneyMatch = string.match(content, "Money per sec[^%d]*(%d+%.?%d*[MK]?)")
-    if not moneyMatch then
-        moneyMatch = string.match(content, "Money[^%d]*(%d+%.?%d*[MK]?)")
-    end
     if moneyMatch then
         info.money = parseMoney(moneyMatch)
     end
@@ -482,62 +488,141 @@ local function joinJobInstantly(jobId, money, players, serverName)
     end
 end
 
--- Fractucul-style Discord monitoring using HTTP requests
-local function monitorDiscordChannel()
+-- Function to send heartbeat to Discord
+local function sendHeartbeat()
+    if websocket and websocket.Connected then
+        local payload = {
+            op = 1,
+            d = lastSequence
+        }
+        websocket:Send(HttpService:JSONEncode(payload))
+        addLog("Sent heartbeat to Discord")
+    end
+end
+
+-- Function to connect to Discord Gateway
+local function connectToDiscordGateway()
     if DISCORD_TOKEN == "" then
         statusLabel.Text = "Error: No Discord token"
         addLog("Error: No Discord token provided")
         return false
     end
     
-    statusLabel.Text = "Monitoring Discord channel..."
-    addLog("Started monitoring Discord channel: " .. channelDropdown.Text)
+    statusLabel.Text = "Connecting to Discord..."
+    addLog("Connecting to Discord gateway...")
     
-    local selectedChannel = CHILLI_HUB_CHANNELS[channelDropdown.Text]
-    if not selectedChannel then
-        statusLabel.Text = "Error: Invalid channel selected"
-        addLog("Error: Invalid channel selected")
-        return false
-    end
+    local success, ws = pcall(function()
+        if syn and syn.websocket then
+            return syn.websocket.connect(DISCORD_GATEWAY)
+        elseif WebSocket then
+            return WebSocket.connect(DISCORD_GATEWAY)
+        else
+            error("No WebSocket implementation found")
+        end
+    end)
     
-    local lastMessageId = nil
-    
-    while isRunning do
-        local success, response = pcall(function()
-            local url = "https://discord.com/api/v9/channels/" .. selectedChannel .. "/messages?limit=5"
-            local headers = {
-                ["Authorization"] = DISCORD_TOKEN,
-                ["Content-Type"] = "application/json"
-            }
-            
-            return game:HttpGet(url, true, headers)
-        end)
+    if success and ws then
+        websocket = ws
+        statusLabel.Text = "Connected to Discord Gateway!"
+        addLog("Connected to Discord gateway")
         
-        if success and response then
-            local success2, data = pcall(function()
-                return HttpService:JSONDecode(response)
+        -- Listen for messages
+        websocket.OnMessage:Connect(function(message)
+            local success, data = pcall(function()
+                return HttpService:JSONDecode(message)
             end)
             
-            if success2 and type(data) == "table" then
-                for i, message in ipairs(data) do
-                    -- Check if this is a new message
-                    if not lastMessageId or message.id > lastMessageId then
-                        lastMessageId = message.id
+            if success and data then
+                -- Store sequence number for heartbeats
+                if data.s then
+                    lastSequence = data.s
+                end
+                
+                -- Handle Discord Gateway events
+                if data.op == 10 then -- Hello
+                    addLog("Discord handshake received")
+                    heartbeatInterval = data.d.heartbeat_interval / 1000
+                    
+                    -- Send identify payload
+                    local identifyPayload = {
+                        op = 2,
+                        d = {
+                            token = DISCORD_TOKEN,
+                            properties = {
+                                os = "Windows",
+                                browser = "Chrome", 
+                                device = ""
+                            },
+                            intents = 513,
+                            presence = {
+                                status = "online",
+                                afk = false
+                            }
+                        }
+                    }
+                    
+                    local success, err = pcall(function()
+                        websocket:Send(HttpService:JSONEncode(identifyPayload))
+                    end)
+                    
+                    if not success then
+                        statusLabel.Text = "Failed to identify: " .. tostring(err)
+                        addLog("Failed to identify with Discord: " .. tostring(err))
+                        return false
+                    end
+                    
+                    addLog("Sent identify payload to Discord")
+                    
+                    -- Start heartbeat timer
+                    spawn(function()
+                        while websocket and websocket.Connected do
+                            sendHeartbeat()
+                            wait(heartbeatInterval)
+                        end
+                    end)
+                    
+                elseif data.t == "MESSAGE_CREATE" then
+                    if isRunning then
+                        local channelId = data.d.channel_id
                         
-                        -- Extract server info from message
-                        local serverInfo = extractServerInfo(message.content)
-                        if serverInfo.jobId then
-                            addLog("Found server: " .. serverInfo.name)
-                            joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
+                        -- Check if message is from selected channel
+                        local selectedChannel = CHILLI_HUB_CHANNELS[channelDropdown.Text]
+                        if channelId == selectedChannel then
+                            -- Extract server info from message
+                            local serverInfo = extractServerInfo(data.d)
+                            if serverInfo.jobId then
+                                addLog("Found server: " .. serverInfo.name)
+                                joinJobInstantly(serverInfo.jobId, serverInfo.money, serverInfo.players, serverInfo.name)
+                            else
+                                addLog("No valid job ID found in message")
+                            end
                         end
                     end
+                elseif data.op == 11 then -- Heartbeat ACK
+                    -- Heartbeat acknowledged
+                elseif data.op == 9 then -- Invalid session
+                    addLog("Invalid session, reconnecting...")
+                    wait(2)
+                    connectToDiscordGateway()
                 end
             end
-        else
-            addLog("Failed to fetch messages from Discord")
-        end
+        end)
         
-        wait(2) -- Check for new messages every 2 seconds
+        websocket.OnClose:Connect(function()
+            statusLabel.Text = "Discord connection closed"
+            addLog("Discord connection closed")
+            websocket = nil
+            if isRunning then
+                wait(3)
+                connectToDiscordGateway()
+            end
+        end)
+        
+        return true
+    else
+        statusLabel.Text = "Failed to connect to Discord"
+        addLog("Failed to connect to Discord gateway: " .. tostring(ws))
+        return false
     end
 end
 
@@ -555,17 +640,21 @@ toggleButton.MouseButton1Click:Connect(function()
         toggleButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
         toggleButton.Text = "STOP AUTOJOINER"
         addLog("AutoJoiner started")
-        spawn(monitorDiscordChannel)
+        connectToDiscordGateway()
     else
         toggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
         toggleButton.Text = "START AUTOJOINER"
         addLog("AutoJoiner stopped")
+        if websocket then
+            websocket:Close()
+            websocket = nil
+        end
         statusLabel.Text = "Stopped - Ready"
     end
 end)
 
 -- Channel dropdown functionality
-local channelOptions = {"10m_plus", "1m_10m", "500极_1m"}
+local channelOptions = {"under_500k", "500k_1m", "500k_1m_alt", "1m_10m", "1m_10m_alt", "10m_plus"}
 local dropdownOpen = false
 local dropdownFrame = nil
 
@@ -585,7 +674,7 @@ local function toggleDropdown()
     dropdownFrame.Name = "ChannelDropdownOptions"
     dropdownFrame.Size = UDim2.new(0, channelDropdown.AbsoluteSize.X, 0, #channelOptions * 25)
     dropdownFrame.Position = UDim2.new(0, channelDropdown.AbsolutePosition.X - mainContainer.AbsolutePosition.X, 0, channelDropdown.AbsolutePosition.Y - mainContainer.AbsolutePosition.Y + channelDropdown.AbsoluteSize.Y)
-    dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40极 45)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     dropdownFrame.BorderSizePixel = 0
     dropdownFrame.Parent = mainContainer
     dropdownFrame.ZIndex = 10
@@ -595,7 +684,7 @@ local function toggleDropdown()
     dropdownCorner.Parent = dropdownFrame
     
     local dropdownLayout = Instance.new("UIListLayout")
-    dropdownLayout.Parent = dropdownFrame
+    dropdownLayout.Parent = dropdown极ame
     
     for _, option in ipairs(channelOptions) do
         local optionButton = Instance.new("TextButton")
@@ -644,7 +733,7 @@ titleBar.InputBegan:Connect(function(input)
 end)
 
 titleBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.User极utType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end
@@ -680,6 +769,6 @@ addLog("Fractucul AutoJoiner initialized")
 addLog("Select channel and click START")
 
 print("Fractucul-Style AutoJoiner loaded!")
-print("Compatible with Zenith executor")
+print("WebSocket version - should work with your executor")
 print("Make sure to execute with your USER Discord token")
 print("Click START AUTOJOINER to begin monitoring Discord channels")
